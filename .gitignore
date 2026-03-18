@@ -1,0 +1,14 @@
+# Ignore the virtual environment folders
+wishlist-api/venv/
+wishlist-api/env/
+
+# Ignore environment variables containing database passwords
+wishlist-api/.env
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore folder .idea
+wishlist-api/.idea/
