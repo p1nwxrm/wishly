@@ -1,14 +1,41 @@
-# Ignore the virtual environment folders
+# ==========================================
+# BACKEND (FastAPI / wishlist-api)
+# ==========================================
+# Virtual environments strictly for the backend
+wishlist-api/.venv/
 wishlist-api/venv/
-wishlist-api/env/
 
-# Ignore environment variables containing database passwords
+# Backend secrets and environment variables
 wishlist-api/.env
+wishlist-api/.env.*
+!wishlist-api/.env.example
 
-# Ignore Python cache files
+# Python cache (global rule, catches cache anywhere in the repo)
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+.pytest_cache/
+alembic/__pycache__/
 
-# Ignore folder .idea
-wishlist-api/.idea/
+# ==========================================
+# FRONTEND (Future folder, e.g., 'frontend')
+# ==========================================
+# Heavy Node.js dependencies
+frontend/node_modules/
+
+# Frontend secrets
+frontend/.env
+frontend/.env.local
+frontend/.env.*
+
+# Production build output directories
+frontend/dist/
+frontend/build/
+
+# ==========================================
+# GLOBAL IDE & OS SETTINGS
+# ==========================================
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

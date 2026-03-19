@@ -1,17 +1,21 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
-# Database connection string (using the asynchronous aiomysql driver)
-# Format: dialect+driver://username:password@host:port/database
-DATABASE_URL = "mysql+aiomysql://username:password@localhost/wishly_db"
+# Import our global settings object to safely access environment variables
+from app.core.config import settings
 
+# ==========================================
+# DATABASE SETUP
+# ==========================================
+
+# We no longer hardcode the database URL. We dynamically fetch it from validated settings.
 # 'echo=True' logs all generated SQL statements to the console for debugging.
-# Set this to False in a production environment.
-engine = create_async_engine(DATABASE_URL, echo=True)
+# Remember to set this to False in a production environment.
+engine = create_async_engine(settings.DATABASE_URL, echo=True)
 
-# 'expire_on_commit=False' is required for async SQLAlchemy.
-# It prevents the session from implicitly making synchronous lazy-loading database
-# requests to refresh object attributes after a commit, which would cause errors.
+# 'expire_on_commit=False' is strictly required for async SQLAlchemy.
+# It prevents the session from implicitly making synchronous lazy-loading requests
+# to refresh object attributes after a transaction commit.
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 class Base(DeclarativeBase):

@@ -1,0 +1,46 @@
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
+
+# ==========================================
+# PATH RESOLUTION
+# ==========================================
+# Dynamically calculate the absolute path to the root 'wishlist-api' directory.
+# __file__ refers to this current file (app/core/config.py).
+# .parent.parent.parent moves up three levels: core -> app -> wishlist-api
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+ENV_FILE_PATH = ROOT_DIR / ".env"
+
+
+# ==========================================
+# APPLICATION CONFIGURATION
+# ==========================================
+
+class Settings(BaseSettings):
+	"""
+	Application settings and environment variables.
+	Pydantic will automatically read these from the .env file.
+	"""
+	DB_HOST: str = Field(default="127.0.0.1")
+	DB_PORT: int = Field(default=3306)
+	DB_USER: str
+	DB_PASSWORD: str
+	DB_NAME: str
+
+	# Security key used to cryptographically sign JWT access tokens.
+	# Keep this completely secret and never push it to version control!
+	SECRET_KEY: str
+
+	@property
+	def DATABASE_URL(self) -> str:
+		"""
+		Dynamically constructs the asynchronous MySQL connection string.
+		"""
+		return f"mysql+aiomysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+
+	# We now pass the exact, absolute path to the .env file
+	model_config = SettingsConfigDict(env_file=str(ENV_FILE_PATH), env_file_encoding="utf-8", extra="ignore")
+
+
+# Create a global instance of the settings object to be imported across the app
+settings = Settings()

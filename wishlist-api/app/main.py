@@ -2,9 +2,11 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# We will import our endpoint routers here once they are created.
-# from app.api.endpoints import users, gifts, wishlists
 
+
+
+# Initialize the main FastAPI application instance.
+# The title and description will automatically appear in the Swagger UI documentation.
 app = FastAPI(
     title="Wishly API",
     description="Backend for a gift-booking and wishlist management system",
@@ -33,11 +35,10 @@ app.add_middleware(
 # ==========================================
 # ROUTER REGISTRATION
 # ==========================================
-# Uncomment these lines once the router files are created in app/api/endpoints/
 
-# app.include_router(users.router, prefix="/api/users", tags=["Users"])
-# app.include_router(gifts.router, prefix="/api/gifts", tags=["Gifts"])
-# app.include_router(wishlists.router, prefix="/api/wishlists", tags=["Wishlists"])
+# Include the users router.
+# All endpoints defined in users.py will now be accessible via the /users prefix.
+# app.include_router(users.router)
 
 
 # ==========================================
@@ -51,6 +52,20 @@ async def ping():
     """
     return {"status": "ok", "message": "Wishly API is running smoothly!"}
 
+
+# ==========================================
+# ROOT ENDPOINT
+# ==========================================
+
+@app.get("/")
+async def root():
+    """
+    Simple health-check endpoint to verify that the server is successfully running.
+    """
+    return {
+        "status": "success",
+        "message": "Welcome to the Wishly API! Visit /docs for the Swagger UI."
+    }
 
 # ==========================================
 # SERVER ENTRY POINT
