@@ -12,21 +12,21 @@ from alembic import context
 from app.core.config import settings
 from app.db.database import Base
 
-# Обязательно импортируем файл с моделями, чтобы Alembic увидел структуру таблиц!
-from app.models import models 
+# Import all models to ensure Alembic can detect the table structures for autogenerate
+from app.models import models
 
 # ==========================================
 # ALEMBIC CONFIGURATION
 # ==========================================
 config = context.config
 
-# Динамически подменяем URL базы данных на наш безопасный из .env
+# Dynamically override the database URL with the secure URL from our .env settings
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Указываем Alembic, где брать схему наших таблиц
+# Point Alembic to our SQLAlchemy models' metadata for schema tracking
 target_metadata = Base.metadata
 
 # ==========================================

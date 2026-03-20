@@ -1,16 +1,16 @@
 # ==========================================
-# BACKEND (FastAPI / wishlist-api)
+# BACKEND (FastAPI)
 # ==========================================
 # Virtual environments strictly for the backend
-wishlist-api/.venv/
-wishlist-api/venv/
+backend/.venv/
+backend/venv/
 
 # Backend secrets and environment variables
-wishlist-api/.env
-wishlist-api/.env.*
-!wishlist-api/.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
 
-# Python cache (global rule, catches cache anywhere in the repo)
+# Python cache (global rule)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -18,19 +18,39 @@ __pycache__/
 alembic/__pycache__/
 
 # ==========================================
-# FRONTEND (Future folder, e.g., 'frontend')
+# FRONTEND (Flutter & Dart)
 # ==========================================
-# Heavy Node.js dependencies
-frontend/node_modules/
-
-# Frontend secrets
-frontend/.env
-frontend/.env.local
-frontend/.env.*
-
-# Production build output directories
-frontend/dist/
+# Flutter/Dart build files and cache
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.pub-cache/
+frontend/.pub/
 frontend/build/
+
+# Android-specific local cache and secrets
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/android/key.properties
+frontend/android/app/src/main/res/values/secrets.xml
+
+# iOS/macOS-specific local cache
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/ios/Flutter/.last_build_id
+frontend/ios/Flutter/App.framework
+frontend/ios/Flutter/Flutter.framework
+frontend/ios/Flutter/Flutter.podspec
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Flutter/app.flx
+frontend/ios/Flutter/app.zip
+frontend/ios/Flutter/flutter_assets/
+frontend/ios/Flutter/flutter_export_environment.sh
+frontend/macos/Flutter/ephemeral/
+
+# Windows/Linux-specific cache
+frontend/windows/flutter/ephemeral/
+frontend/linux/flutter/ephemeral/
 
 # ==========================================
 # GLOBAL IDE & OS SETTINGS

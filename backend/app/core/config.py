@@ -21,15 +21,20 @@ class Settings(BaseSettings):
 	Application settings and environment variables.
 	Pydantic will automatically read these from the .env file.
 	"""
+	# Database Settings
 	DB_HOST: str = Field(default="127.0.0.1")
 	DB_PORT: int = Field(default=3306)
 	DB_USER: str
 	DB_PASSWORD: str
 	DB_NAME: str
 
+	# JWT Security Settings
 	# Security key used to cryptographically sign JWT access tokens.
-	# Keep this completely secret and never push it to version control!
 	SECRET_KEY: str
+	# The algorithm used to sign the token (e.g., "HS256")
+	ALGORITHM: str = Field(default="HS256")
+	# How long the token remains valid (in minutes)
+	ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60)
 
 	@property
 	def DATABASE_URL(self) -> str:
