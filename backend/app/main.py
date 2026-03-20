@@ -2,8 +2,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-
-
+# Import our aggregated routers from the endpoints package
+from app.api.endpoints import auth_router, users_router
 
 # Initialize the main FastAPI application instance.
 # The title and description will automatically appear in the Swagger UI documentation.
@@ -35,10 +35,11 @@ app.add_middleware(
 # ==========================================
 # ROUTER REGISTRATION
 # ==========================================
+# Register the authentication router (login, refresh).
+app.include_router(auth_router)
 
-# Include the users router.
-# All endpoints defined in users.py will now be accessible via the /users prefix.
-# app.include_router(users.router)
+# Register the users router (registration, profile, etc.).
+app.include_router(users_router)
 
 
 # ==========================================
@@ -57,7 +58,7 @@ async def ping():
 # ROOT ENDPOINT
 # ==========================================
 
-@app.get("/")
+@app.get("/", tags=["System"])
 async def root():
     """
     Simple health-check endpoint to verify that the server is successfully running.

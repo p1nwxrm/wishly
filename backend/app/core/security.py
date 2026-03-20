@@ -1,7 +1,11 @@
+from datetime import datetime, timedelta, timezone
+from typing import Any
+from jose import jwt
 from passlib.context import CryptContext
+from app.core.config import settings
 
 # ==========================================
-# SECURITY & PASSWORD HASHING
+# PASSWORD HASHING CONFIGURATION
 # ==========================================
 
 # Initialize the CryptContext using the bcrypt algorithm.
@@ -32,3 +36,50 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     # pwd_context.verify automatically extracts the salt from the hashed_password,
     # applies it to the plain_password, hashes it, and securely compares the results.
     return pwd_context.verify(plain_password, hashed_password)
+
+
+# ==========================================
+# JWT TOKEN GENERATION
+# ==========================================
+
+def create_access_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
+    """
+    Creates a short-lived JSON Web Token (Access Token).
+    This token is attached to API requests to prove the user's identity.
+    """
+    # 'sub' (subject) is the standard JWT claim for the user identifier (e.g., user ID or email)
+    to_encode: dict[str, Any] = {"sub": str(subject)}
+
+    # Calculate expiration time
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    # Add expiration timestamp to the payload
+    to_encode.update({"exp": expire})
+
+    # Sign the token using the primary SECRET_KEY
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+    return encoded_jwt
+
+
+def create_refresh_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
+    """
+    Creates a long-lived JSON Web Token (Refresh Token).
+    This token is used strictly to request a new Access Token when the old one expires.
+    """
+    to_encode: dict[str, Any] = {"sub": str(subject)}
+
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+
+    to_encode.update({"exp": expire})
+
+    # Sign the token using the dedicated REFRESH_SECRET_KEY for enhanced security
+    encoded_jwt = jwt.encode(to_encode, settings.REFRESH_SECRET_KEY, algorithm=settings.ALGORITHM)
+
+    return encoded_jwt

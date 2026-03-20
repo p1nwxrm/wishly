@@ -5,9 +5,9 @@ from pydantic import Field
 # ==========================================
 # PATH RESOLUTION
 # ==========================================
-# Dynamically calculate the absolute path to the root 'wishlist-api' directory.
+# Dynamically calculate the absolute path to the root 'backend' directory.
 # __file__ refers to this current file (app/core/config.py).
-# .parent.parent.parent moves up three levels: core -> app -> wishlist-api
+# .parent.parent.parent moves up three levels: core -> app -> backend
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 ENV_FILE_PATH = ROOT_DIR / ".env"
 
@@ -31,10 +31,16 @@ class Settings(BaseSettings):
 	# JWT Security Settings
 	# Security key used to cryptographically sign JWT access tokens.
 	SECRET_KEY: str
+	# Security key used to cryptographically sign JWT refresh tokens.
+	REFRESH_SECRET_KEY: str
+
 	# The algorithm used to sign the token (e.g., "HS256")
 	ALGORITHM: str = Field(default="HS256")
-	# How long the token remains valid (in minutes)
+
+	# How long the access token remains valid (in minutes)
 	ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60)
+	# How long the refresh token remains valid (in days)
+	REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=30)
 
 	@property
 	def DATABASE_URL(self) -> str:

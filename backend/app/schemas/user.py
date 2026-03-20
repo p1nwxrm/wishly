@@ -14,7 +14,6 @@ class UserBase(BaseModel):
 	name: str = Field(..., min_length=2, max_length=100, description="User's full name")
 	email: EmailStr = Field(..., description="Valid email address")
 	photo_url: Optional[str] = Field(None, max_length=255)
-	subscription_type_id: int = Field(..., description="ID of the user's subscription tier")
 
 
 class UserCreate(UserBase):
@@ -43,6 +42,7 @@ class UserResponse(UserBase):
 	Properties to return via API (excludes password).
 	"""
 	id: int
+	subscription_type_id: int
 	created_at: datetime
 
 	# Enables Pydantic to read data seamlessly from SQLAlchemy ORM models

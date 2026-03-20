@@ -1,0 +1,85 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.ext.asyncio import AsyncSession
+from jose import jwt, JWTError
+
+from app import crud, schemas
+from app.api import dependencies
+from app.core import security
+from app.core.config import settings
+
+router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+# ==========================================
+# AUTHENTICATION ENDPOINTS
+# ==========================================
+
+@router.post("/login", response_model=schemas.Token)
+async def login(
+		db: AsyncSession = Depends(dependencies.get_db),
+		form_data: OAuth2PasswordRequestForm = Depends()
+):
+	"""
+	OAuth2 compatible token login.
+	Accepts an email (passed into the 'username' field) and password.
+	"""
+	# Use the correct CRUD function name: get_user_by_email
+	user = await crud.user.get_user_by_email(db, email=form_data.username)
+
+	# Use the correct model attribute: user.password_hash
+	if not user or not security.verify_password(form_data.password, user.password_hash):
+		raise HTTPException(
+			status_code=status.HTTP_401_UNAUTHORIZED,
+			detail="Incorrect email or password",
+			headers={"WWW-Authenticate": "Bearer"},
+		)
+
+	access_token = security.create_access_token(subject=user.id)
+	refresh_token = security.create_refresh_token(subject=user.id)
+
+	return {
+		"access_token": access_token,
+		"refresh_token": refresh_token,
+		"token_type": "bearer"
+	}
+
+
+@router.post("/refresh", response_model=schemas.Token)
+async def refresh_access_token(
+		refresh_token: str,
+		db: AsyncSession = Depends(dependencies.get_db)
+):
+	"""
+	Accepts a valid refresh token and returns a fresh access and refresh token pair.
+	"""
+	credentials_exception = HTTPException(
+		status_code=status.HTTP_401_UNAUTHORIZED,
+		detail="Could not validate refresh token",
+		headers={"WWW-Authenticate": "Bearer"},
+	)
+
+	try:
+		payload = jwt.decode(
+			refresh_token,
+			settings.REFRESH_SECRET_KEY,
+			algorithms=[settings.ALGORITHM]
+		)
+		user_id: str = payload.get("sub")
+		if user_id is None:
+			raise credentials_exception
+	except JWTError:
+		raise credentials_exception
+
+	# Use the correct CRUD function name: get_user_by_id
+	user = await crud.user.get_user_by_id(db, user_id=int(user_id))
+	if not user:
+		raise credentials_exception
+
+	new_access_token = security.create_access_token(subject=user.id)
+	new_refresh_token = security.create_refresh_token(subject=user.id)
+
+	return {
+		"access_token": new_access_token,
+		"refresh_token": new_refresh_token,
+		"token_type": "bearer"
+	}
