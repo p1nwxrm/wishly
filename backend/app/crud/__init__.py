@@ -1,13 +1,17 @@
-# ==========================================
-# CRUD MODULE INITIALIZATION
-# ==========================================
-# By importing the modules here, we encapsulate the CRUD layer.
-# This allows routers to import the entire 'crud' package cleanly,
-# rather than importing individual functions from specific files.
-
 from . import user
 from . import gift
 from . import wishlist
 from . import tag
 from . import booking
 from . import subscription
+
+# Define __all__ to explicitly declare the public API of the core package.
+# This tells other developers (and IDEs) exactly what is safe to import.
+__all__ = [
+    "user",
+    "gift",
+    "wishlist",
+    "tag",
+    "booking",
+    "subscription",
+]

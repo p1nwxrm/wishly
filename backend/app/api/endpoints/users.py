@@ -9,6 +9,7 @@ from app.schemas.user import UserCreate, UserUpdate, UserResponse
 from app.api.dependencies import get_db, get_current_user
 from app.models.models import User
 
+
 # Initialize the router.
 # Prefix means all routes here will automatically start with /users (e.g., /users/register)
 # Tags group these endpoints together in the Swagger UI.
@@ -43,17 +44,6 @@ async def register_user(
 
     return new_user
 
-@router.get("/me", response_model=UserResponse)
-async def get_my_profile(
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Returns the profile information of the currently authenticated user.
-    The get_current_user dependency handles token validation and database lookup.
-    """
-    # The dependency already fetched the user from the DB, so we just return it!
-    return current_user
-
 
 @router.post("/me/photo", response_model=UserResponse)
 async def upload_profile_photo(
@@ -79,3 +69,17 @@ async def upload_profile_photo(
     )
 
     return updated_user
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_my_profile(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Returns the profile information of the currently authenticated user.
+    The get_current_user dependency handles token validation and database lookup.
+    """
+    # The dependency already fetched the user from the DB, so we just return it!
+    return current_user
+
+

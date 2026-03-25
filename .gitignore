@@ -18,6 +18,12 @@ __pycache__/
 alembic/__pycache__/
 
 # ==========================================
+# USER UPLOADS (Media files)
+# ==========================================
+# Ignore the entire uploads directory and all its contents
+backend/uploads/
+
+# ==========================================
 # FRONTEND (Flutter & Dart)
 # ==========================================
 # Flutter/Dart build files and cache

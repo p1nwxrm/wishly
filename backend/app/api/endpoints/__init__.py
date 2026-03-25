@@ -1,4 +1,19 @@
-# Export routers with distinct names to prevent namespace collisions
-from .auth import router as auth_router
-from .users import router as users_router
-from .gifts import router as gifts_router
+from . import auth
+from . import bookings
+from . import gifts
+from . import subscriptions
+from . import tags
+from . import users
+from . import wishlists
+
+# Define __all__ to explicitly declare the public API of the core package.
+# This tells other developers (and IDEs) exactly what is safe to import.
+__all__ = [
+    "auth",
+    "bookings",
+    "gifts",
+    "subscriptions",
+    "tags",
+    "users",
+    "wishlists",
+]

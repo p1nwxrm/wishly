@@ -41,7 +41,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 # It is specifically used by Swagger UI to render the "Authorize" button correctly.
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"/auth/login")
 
-
 async def get_current_user(
 		db: AsyncSession = Depends(get_db),
 		token: str = Depends(reusable_oauth2)

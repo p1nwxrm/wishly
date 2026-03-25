@@ -140,7 +140,6 @@ class Tag(Base):
 	id: Mapped[int] = mapped_column(primary_key=True)
 	name: Mapped[str] = mapped_column(String(50))
 
-	# Since you want tags to delete when the user deletes, this shouldn't be Optional anymore !!!!!!!!!!!!!!!!!!!!!!
 	created_by_user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
 	description: Mapped[Optional[str]] = mapped_column(Text)
 
