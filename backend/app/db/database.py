@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker # type: ignore
 from sqlalchemy.orm import DeclarativeBase
 
 # Import our global settings object to safely access environment variables

@@ -91,6 +91,7 @@ async def update_user(db: AsyncSession, db_user: User, user_in: UserUpdate) -> U
 
     return db_user
 
+
 async def delete_user(db: AsyncSession, user_id: int) -> bool:
     """
     Deletes a user from the database.

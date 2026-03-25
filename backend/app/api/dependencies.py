@@ -1,9 +1,9 @@
 from collections.abc import AsyncGenerator
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, status # type: ignore
+from fastapi.security import OAuth2PasswordBearer # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt, JWTError
-from pydantic import ValidationError
+from pydantic import ValidationError # type: ignore
 
 # Import our project modules
 from app.db.database import AsyncSessionLocal
@@ -39,9 +39,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 # This tells FastAPI where the client should go to get the token.
 # It is specifically used by Swagger UI to render the "Authorize" button correctly.
-reusable_oauth2 = OAuth2PasswordBearer(
-	tokenUrl=f"/login"
-)
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"/auth/login")
 
 
 async def get_current_user(

@@ -5,4 +5,4 @@ from .tag import TagCreate, TagUpdate, TagResponse
 from .user import UserCreate, UserUpdate, UserResponse
 from .user_subscription import UserSubscriptionCreate, UserSubscriptionResponse
 from .wishlist import WishlistCreate, WishlistUpdate, WishlistResponse
-from .token import Token, TokenPayload
+from .token import Token, TokenPayload, TokenRefresh

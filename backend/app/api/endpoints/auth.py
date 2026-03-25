@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, status # type: ignore
+from fastapi.security import OAuth2PasswordRequestForm # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt, JWTError
 
@@ -27,7 +27,7 @@ async def login(
 	user = await crud.user.get_user_by_email(db, email=form_data.username)
 
 	# Use the correct model attribute: user.password_hash
-	if not user or not security.verify_password(form_data.password, user.password_hash):
+	if not user or not security.verify_password(form_data.password, str(user.password_hash)):
 		raise HTTPException(
 			status_code=status.HTTP_401_UNAUTHORIZED,
 			detail="Incorrect email or password",
@@ -45,36 +45,43 @@ async def login(
 
 
 @router.post("/refresh", response_model=schemas.Token)
-async def refresh_access_token(
-		refresh_token: str,
+async def refresh_tokens(
+		body: schemas.TokenRefresh,
 		db: AsyncSession = Depends(dependencies.get_db)
 ):
 	"""
-	Accepts a valid refresh token and returns a fresh access and refresh token pair.
+	Takes a refresh token from the JSON body, validates its signature and expiration,
+	and returns a brand new pair of access and refresh tokens.
 	"""
 	credentials_exception = HTTPException(
 		status_code=status.HTTP_401_UNAUTHORIZED,
-		detail="Could not validate refresh token",
+		detail="Invalid or expired refresh token",
 		headers={"WWW-Authenticate": "Bearer"},
 	)
 
 	try:
+		# 1. Decode the refresh token using the specific refresh secret key
 		payload = jwt.decode(
-			refresh_token,
+			body.refresh_token,
 			settings.REFRESH_SECRET_KEY,
 			algorithms=[settings.ALGORITHM]
 		)
-		user_id: str = payload.get("sub")
+
+		# 2. Extract the user ID from the 'sub' claim
+		user_id: str | None = payload.get("sub")
 		if user_id is None:
 			raise credentials_exception
+
 	except JWTError:
+		# Catches tokens with invalid signatures or those past their 30-day expiration
 		raise credentials_exception
 
-	# Use the correct CRUD function name: get_user_by_id
+	# 3. Verify the user still exists in our database
 	user = await crud.user.get_user_by_id(db, user_id=int(user_id))
 	if not user:
 		raise credentials_exception
 
+	# 4. Generate a fresh pair of tokens using your security functions
 	new_access_token = security.create_access_token(subject=user.id)
 	new_refresh_token = security.create_refresh_token(subject=user.id)
 

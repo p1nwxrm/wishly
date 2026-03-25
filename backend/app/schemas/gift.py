@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict, HttpUrl
+from pydantic import BaseModel, Field, ConfigDict, HttpUrl # type: ignore
 from typing import Optional
 from datetime import datetime
 
@@ -36,6 +36,7 @@ class GiftUpdate(BaseModel):
 	"""
 	name: Optional[str] = Field(None, min_length=1, max_length=150)
 	price_usd: Optional[float] = Field(None, gt=0)
+	photo_url: Optional[str] = Field(None, max_length=255)
 	link_url: Optional[HttpUrl] = None
 	is_visible: Optional[bool] = None
 	description: Optional[str] = None

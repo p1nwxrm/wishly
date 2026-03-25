@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel # type: ignore
 
 # ==========================================
 # TOKEN RESPONSE SCHEMAS
@@ -20,3 +20,14 @@ class TokenPayload(BaseModel):
     'sub' (subject) typically holds the user's unique identifier (e.g., email or ID).
     """
     sub: str | None = None
+
+
+# ==========================================
+# TOKEN REQUEST SCHEMAS
+# ==========================================
+
+class TokenRefresh(BaseModel):
+    """
+    Schema for securely receiving the refresh token in the request body.
+    """
+    refresh_token: str

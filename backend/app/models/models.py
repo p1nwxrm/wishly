@@ -88,7 +88,7 @@ class User(Base):
 	id: Mapped[int] = mapped_column(primary_key=True)
 	name: Mapped[str] = mapped_column(String(100))
 	subscription_type_id: Mapped[int] = mapped_column(ForeignKey("subscription_types.id"))
-	photo_url: Mapped[str] = mapped_column(String(255))
+	photo_url: Mapped[Optional[str]] = mapped_column(String(255))
 
 	# Indexing email for fast O(log N) lookup during authentication
 	email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
