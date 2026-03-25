@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, status, Request # type: ignore
 from fastapi.security import OAuth2PasswordRequestForm # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt, JWTError
@@ -7,6 +7,7 @@ from app import crud, schemas
 from app.api import dependencies
 from app.core import security
 from app.core.config import settings
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -15,13 +16,16 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 # ==========================================
 
 @router.post("/login", response_model=schemas.Token)
+@limiter.limit("5/minute")
 async def login(
+		request: Request,
 		db: AsyncSession = Depends(dependencies.get_db),
 		form_data: OAuth2PasswordRequestForm = Depends()
 ):
 	"""
 	OAuth2 compatible token login.
 	Accepts an email (passed into the 'username' field) and password.
+	Rate limited to 5 requests per minute to prevent brute-force attacks.
 	"""
 	# Use the correct CRUD function name: get_user_by_email
 	user = await crud.user.get_user_by_email(db, email=form_data.username)
@@ -45,7 +49,9 @@ async def login(
 
 
 @router.post("/refresh", response_model=schemas.Token)
+@limiter.limit("10/minute")
 async def refresh_tokens(
+		request: Request,
 		body: schemas.TokenRefresh,
 		db: AsyncSession = Depends(dependencies.get_db)
 ):

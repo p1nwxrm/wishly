@@ -3,8 +3,14 @@ import uvicorn # type: ignore
 from fastapi import FastAPI # type: ignore
 from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from fastapi.staticfiles import StaticFiles # type: ignore
+
 from app.api.router import api_router
 
+# Import SlowAPI components for global rate limiting
+from slowapi import _rate_limit_exceeded_handler # type: ignore
+from slowapi.errors import RateLimitExceeded # type: ignore
+from slowapi.middleware import SlowAPIMiddleware # type: ignore
+from app.core.limiter import limiter
 
 # Initialize the main FastAPI application instance.
 # The title and description will automatically appear in the Swagger UI documentation.
@@ -33,6 +39,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ==========================================
+# RATE LIMITER REGISTRATION
+# ==========================================
+# Attach the limiter to the application state
+app.state.limiter = limiter
+
+# Add the custom exception handler for HTTP 429 errors
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Add the SlowAPI middleware to enforce global default_limits across all endpoints
+app.add_middleware(SlowAPIMiddleware)
 
 
 # ==========================================
