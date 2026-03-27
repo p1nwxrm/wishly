@@ -18,8 +18,10 @@ class TokenPayload(BaseModel):
     """
     Schema for the data encoded inside the JWT payload.
     'sub' (subject) typically holds the user's unique identifier (e.g., email or ID).
+    'version' tracks the token generation iteration for server-side invalidation.
     """
     sub: str | None = None
+    version: int | None = None
 
 
 # ==========================================

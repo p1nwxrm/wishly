@@ -38,8 +38,8 @@ async def login(
 			headers={"WWW-Authenticate": "Bearer"},
 		)
 
-	access_token = security.create_access_token(subject=user.id)
-	refresh_token = security.create_refresh_token(subject=user.id)
+	access_token = security.create_access_token(subject=user.id, token_version=int(user.token_version)) # type: ignore
+	refresh_token = security.create_refresh_token(subject=user.id, token_version=int(user.token_version)) # type: ignore
 
 	return {
 		"access_token": access_token,
@@ -66,30 +66,32 @@ async def refresh_tokens(
 	)
 
 	try:
-		# 1. Decode the refresh token using the specific refresh secret key
+		# Decode the refresh token using the specific refresh secret key
 		payload = jwt.decode(
 			body.refresh_token,
 			settings.REFRESH_SECRET_KEY,
 			algorithms=[settings.ALGORITHM]
 		)
 
-		# 2. Extract the user ID from the 'sub' claim
 		user_id: str | None = payload.get("sub")
-		if user_id is None:
+		token_version: int | None = payload.get("version")
+
+		if user_id is None or token_version is None:
 			raise credentials_exception
 
 	except JWTError:
 		# Catches tokens with invalid signatures or those past their 30-day expiration
 		raise credentials_exception
 
-	# 3. Verify the user still exists in our database
 	user = await crud.user.get_user_by_id(db, user_id=int(user_id))
-	if not user:
+
+	# Check if user exists AND if the token version matches the database
+	if not user or user.token_version != token_version:
 		raise credentials_exception
 
-	# 4. Generate a fresh pair of tokens using your security functions
-	new_access_token = security.create_access_token(subject=user.id)
-	new_refresh_token = security.create_refresh_token(subject=user.id)
+	# Generate a fresh pair of tokens using your security functions
+	new_access_token = security.create_access_token(subject=user.id, token_version=int(user.token_version)) # type: ignore
+	new_refresh_token = security.create_refresh_token(subject=user.id, token_version=int(user.token_version)) # type: ignore
 
 	return {
 		"access_token": new_access_token,

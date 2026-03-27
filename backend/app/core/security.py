@@ -42,13 +42,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # JWT TOKEN GENERATION
 # ==========================================
 
-def create_access_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
+def create_access_token(subject: str | Any, token_version: int, expires_delta: timedelta | None = None) -> str:
     """
     Creates a short-lived JSON Web Token (Access Token).
     This token is attached to API requests to prove the user's identity.
     """
     # 'sub' (subject) is the standard JWT claim for the user identifier (e.g., user ID or email)
-    to_encode: dict[str, Any] = {"sub": str(subject)}
+    to_encode: dict[str, Any] = {"sub": str(subject), "version": token_version}
 
     # Calculate expiration time
     if expires_delta:
@@ -65,12 +65,12 @@ def create_access_token(subject: str | Any, expires_delta: timedelta | None = No
     return encoded_jwt
 
 
-def create_refresh_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
+def create_refresh_token(subject: str | Any, token_version: int, expires_delta: timedelta | None = None) -> str:
     """
     Creates a long-lived JSON Web Token (Refresh Token).
     This token is used strictly to request a new Access Token when the old one expires.
     """
-    to_encode: dict[str, Any] = {"sub": str(subject)}
+    to_encode: dict[str, Any] = {"sub": str(subject), "version": token_version}
 
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta

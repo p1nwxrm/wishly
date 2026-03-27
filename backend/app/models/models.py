@@ -86,7 +86,8 @@ class User(Base):
 	__tablename__ = "users"
 
 	id: Mapped[int] = mapped_column(primary_key=True)
-	name: Mapped[str] = mapped_column(String(100))
+	username: Mapped[str] = mapped_column(String(50), unique=True, index=True) # 1. Unique username (e.g., 'sarahj_98')
+	name: Mapped[str] = mapped_column(String(100), index=True) # 2. Display name (e.g., 'Sarah Jenkins')
 	subscription_type_id: Mapped[int] = mapped_column(ForeignKey("subscription_types.id"))
 	photo_url: Mapped[Optional[str]] = mapped_column(String(255))
 
@@ -94,6 +95,9 @@ class User(Base):
 	email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
 	password_hash: Mapped[str] = mapped_column(String(255))
 	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+	# Used to invalidate all existing JWT tokens instantly
+	token_version: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
 
 	# --- Relationships ---
 	subscription_type: Mapped[Optional["SubscriptionType"]] = relationship(back_populates="users")

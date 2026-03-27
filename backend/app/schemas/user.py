@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict # type: ignore
+from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict # type: ignore
 from typing import Optional
 from datetime import datetime
 
@@ -11,9 +11,23 @@ class UserBase(BaseModel):
 	"""
 	Shared properties across all User schemas.
 	"""
-	name: str = Field(..., min_length=2, max_length=100, description="User's full name")
+	username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-z0-9_]+$", description="Unique username")
+	name: str = Field(..., min_length=2, max_length=100, description="User's full display name")
 	email: EmailStr = Field(..., description="Valid email address")
 	photo_url: Optional[str] = Field(None, max_length=255)
+
+	# Added validator to protect system routes from being claimed as usernames
+	# noinspection PyNestedDecorators
+	@field_validator('username')
+	@classmethod
+	def prevent_reserved_usernames(cls, v: str) -> str:
+		# A set of reserved words that cannot be used as usernames
+		reserved_words = {"me", "search", "admin", "api", "root", "system", "wishlists", "gifts"}
+
+		# Since regex already enforces lowercase, v is guaranteed to be lowercase here
+		if v in reserved_words:
+			raise ValueError(f"The username '{v}' is reserved by the system and cannot be used.")
+		return v
 
 
 class UserCreate(UserBase):
@@ -29,9 +43,9 @@ class UserUpdate(BaseModel):
 	Properties to receive via API on user update (PATCH request).
 	All fields are optional, so the user can update only specific data.
 	"""
+	username: Optional[str] = Field(None, min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_]+$")
 	name: Optional[str] = Field(None, min_length=2, max_length=100)
 	photo_url: Optional[str] = Field(None, max_length=255)
-	# If they want to change the password
 	password: Optional[str] = Field(None, min_length=8)
 
 	# Notice we don't allow updating email here.

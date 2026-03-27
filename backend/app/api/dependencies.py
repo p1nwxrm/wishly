@@ -63,9 +63,12 @@ async def get_current_user(
 			algorithms=[settings.ALGORITHM]
 		)
 
-		# 2. Extract the user ID from the 'sub' claim
+		# 2. Extract the user ID from the 'sub' claim AND the token version
 		user_id: str | None = payload.get("sub")
-		if user_id is None:
+		token_version: int | None = payload.get("version")
+
+		# If either is missing, the token is invalid or from an older version of app
+		if user_id is None or token_version is None:
 			raise credentials_exception
 
 		# 3. Validate the payload structure using our Pydantic schema
@@ -80,5 +83,12 @@ async def get_current_user(
 
 	if not user:
 		raise credentials_exception
+
+	# 5. THE SECURITY CHECK: Verify if the token has been revoked
+	if user.token_version != token_version:
+		raise HTTPException(
+			status_code=status.HTTP_401_UNAUTHORIZED,
+			detail="Token has been revoked. Please log in again."
+		)
 
 	return user

@@ -1,34 +1,14 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, or_
 
 from app.models.models import User, SubscriptionType
 from app.schemas.user import UserCreate, UserUpdate
 
-# Import the hashing function from our core security module!
 from app.core.security import get_password_hash
 
 # ==========================================
 # USER CRUD OPERATIONS
 # ==========================================
-
-async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
-    """
-    Retrieves a user by their primary key ID.
-    """
-    stmt = select(User).where(User.id == user_id)
-    result = await db.execute(stmt)
-    # scalar_one_or_none returns the object if found, or None if it doesn't exist
-    return result.scalar_one_or_none()
-
-
-async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
-    """
-    Retrieves a user by their email address. Useful for login/registration checks.
-    """
-    stmt = select(User).where(User.email == email)
-    result = await db.execute(stmt)
-    return result.scalar_one_or_none()
-
 
 async def create_user(db: AsyncSession, user_in: UserCreate) -> User:
     """
@@ -61,6 +41,62 @@ async def create_user(db: AsyncSession, user_in: UserCreate) -> User:
     return db_user
 
 
+async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
+    """
+    Retrieves a user by their primary key ID.
+    """
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    # scalar_one_or_none returns the object if found, or None if it doesn't exist
+    return result.scalar_one_or_none()
+
+
+async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
+    """
+    Retrieves a user by their email address. Useful for login/registration checks.
+    """
+    stmt = select(User).where(User.email == email)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def get_user_by_username(db: AsyncSession, username: str) -> User | None:
+    """
+    Retrieves a user by their exact username.
+    Highly useful for checking uniqueness during user registration.
+    """
+    stmt = select(User).where(User.username == username)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def search_users(db: AsyncSession, search_query: str, limit: int = 20) -> list[User]:
+    """
+    Searches for users using a partial match on either their unique username
+    or their display name. Uses ILIKE for case-insensitive matching.
+    Limits the result to prevent massive database payloads.
+    """
+    # Create a wildcard search term. If search_query is "al", search_term becomes "%al%"
+    search_term = f"%{search_query}%"
+
+    # noinspection PyUnresolvedReferences
+    stmt = (
+        select(User)
+        .where(
+            or_(
+                User.username.ilike(search_term),
+                User.name.ilike(search_term)
+            )
+        )
+        .limit(limit)
+    )
+
+    result = await db.execute(stmt)
+
+    # scalars().all() extracts the User objects from the Result object and returns them as a list
+    return list(result.scalars().all())
+
+
 async def update_user(db: AsyncSession, db_user: User, user_in: UserUpdate) -> User:
     """
     Updates user information. Only applies changes for fields explicitly provided in the request.
@@ -89,6 +125,17 @@ async def update_user(db: AsyncSession, db_user: User, user_in: UserUpdate) -> U
     await db.commit()
     await db.refresh(db_user)
 
+    return db_user
+
+
+async def invalidate_user_tokens(db: AsyncSession, db_user: User) -> User:
+    """
+    Increments the user's token_version to invalidate all currently active JWTs.
+    """
+    db_user.token_version += 1
+    db.add(db_user)
+    await db.commit()
+    await db.refresh(db_user)
     return db_user
 
 

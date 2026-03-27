@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status # type: ignore
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,18 +32,23 @@ async def register_user(
     Returns HTTP 400 if the email is already taken.
     Password hashing and default subscription assignment are handled seamlessly by the CRUD layer.
     """
-    # 1. Check if a user with this email already exists
+    # Check if a user with this email already exists
     existing_user = await crud.user.get_user_by_email(db, email=user_in.email)
-
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A user with this email address already exists."
         )
 
-    # 2. Delegate the creation, hashing, and database saving to the CRUD layer
-    new_user = await crud.user.create_user(db, user_in=user_in)
+    # Crucial check: ensure the unique username is not taken
+    existing_username = await crud.user.get_user_by_username(db, username=user_in.username)
+    if existing_username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This username is already taken. Please choose another one."
+        )
 
+    new_user = await crud.user.create_user(db, user_in=user_in)
     return new_user
 
 
@@ -83,3 +90,75 @@ async def get_my_profile(
     return current_user
 
 
+@router.get("/search", response_model=List[UserResponse])
+async def search_for_users(
+        q: str,
+        limit: int = 20,
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+):
+    """
+    Searches for users by partial username or display name.
+    Requires authentication to use the search functionality.
+    """
+    if len(q) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Search query must be at least 2 characters long."
+        )
+
+    users = await crud.user.search_users(db, search_query=q, limit=limit)
+    return users
+
+
+@router.get("/{username}", response_model=UserResponse)
+async def get_user_profile(
+        username: str,
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieves a specific user's public profile by their unique username.
+    This handles the "Stranger's Profile" view from the UI mockups.
+    """
+    user = await crud.user.get_user_by_username(db, username=username)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found."
+        )
+    return user
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_my_profile(
+    user_in: UserUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Updates the authenticated user's profile information (name, username, password).
+    """
+    # Verify username uniqueness if the user is trying to change it
+    if user_in.username and user_in.username != current_user.username:
+        existing_user = await crud.user.get_user_by_username(db, username=user_in.username)
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This username is already taken."
+            )
+
+    updated_user = await crud.user.update_user(db=db, db_user=current_user, user_in=user_in)
+    return updated_user
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout(
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+):
+    """
+    Instantly revokes ALL active tokens for the user across all devices.
+    """
+    await crud.user.invalidate_user_tokens(db, db_user=current_user)
+    return {"detail": "Successfully logged out from all devices. Tokens revoked."}
