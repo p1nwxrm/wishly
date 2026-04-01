@@ -1,0 +1,11 @@
+# Secret configuration files
+.env
+*.env.*
+
+# Android signing keys
+*.jks
+*.keystore
+
+# Utility files not needed for AI (to improve performance)
+.dart_tool/
+build/
