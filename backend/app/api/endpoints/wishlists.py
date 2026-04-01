@@ -9,7 +9,6 @@ from app.api.dependencies import get_db, get_current_user
 # Initialize the router for wishlist-related endpoints
 router = APIRouter(prefix="/wishlists", tags=["Wishlists"])
 
-
 # ==========================================
 # WISHLIST ENDPOINTS
 # ==========================================

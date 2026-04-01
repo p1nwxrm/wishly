@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field, ConfigDict, HttpUrl # type: ignore
 from typing import Optional
 from datetime import datetime
 
-
 # ==========================================
 # GIFT SCHEMAS
 # ==========================================

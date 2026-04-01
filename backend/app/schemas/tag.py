@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict # type: ignore
 from typing import Optional
 
-
 # ==========================================
 # TAG SCHEMAS
 # ==========================================

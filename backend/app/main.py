@@ -45,7 +45,7 @@ app.add_middleware(
 # RATE LIMITER REGISTRATION
 # ==========================================
 # Attach the limiter to the application state
-app.state.limiter = limiter
+app.state.limiter = limiter # type: ignore
 
 # Add the custom exception handler for HTTP 429 errors
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)

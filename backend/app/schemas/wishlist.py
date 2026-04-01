@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field, ConfigDict # type: ignore
 from typing import Optional
 from datetime import datetime
 
-
 # ==========================================
 # WISHLIST SCHEMAS
 # ==========================================

@@ -6,10 +6,8 @@ from app import crud, schemas
 from app.models.models import User
 from app.api.dependencies import get_db, get_current_user
 
-
 # Initialize the router for subscription-related endpoints
 router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
-
 
 # ==========================================
 # SUBSCRIPTION ENDPOINTS

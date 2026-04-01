@@ -6,11 +6,12 @@ from app.models.models import User
 from app.api.dependencies import get_db, get_current_user
 from app.core.file_manager import save_upload_file
 
-
 # Initialize the router for gift-related endpoints
 router = APIRouter(prefix="/gifts", tags=["Gifts"])
 
-
+# ==========================================
+# GIFTS ENDPOINTS
+# ==========================================
 @router.post("/", response_model=schemas.gift.GiftResponse, status_code=status.HTTP_201_CREATED)
 async def create_new_gift(
         gift_in: schemas.gift.GiftCreate,

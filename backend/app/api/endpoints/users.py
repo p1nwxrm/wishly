@@ -11,12 +11,8 @@ from app.schemas.user import UserCreate, UserUpdate, UserResponse
 from app.api.dependencies import get_db, get_current_user
 from app.models.models import User
 
-
 # Initialize the router.
-# Prefix means all routes here will automatically start with /users (e.g., /users/register)
-# Tags group these endpoints together in the Swagger UI.
 router = APIRouter(prefix="/users", tags=["Users"])
-
 
 # ==========================================
 # USER ROUTERS
@@ -33,7 +29,7 @@ async def register_user(
     Password hashing and default subscription assignment are handled seamlessly by the CRUD layer.
     """
     # Check if a user with this email already exists
-    existing_user = await crud.user.get_user_by_email(db, email=user_in.email)
+    existing_user = await crud.user.get_user_by_email(db, email=str(user_in.email))
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
