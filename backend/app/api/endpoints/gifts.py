@@ -91,8 +91,7 @@ async def read_gift(
     """
     Retrieves a specific gift based on strict privacy rules:
     1. The owner sees their own gifts regardless of visibility.
-    2. Other users can only see the gift if both the wishlist and the gift are visible,
-       AND if they are subscribed to the owner.
+    2. Other users can only see the gift if both the wishlist and the gift are visible.
     """
     # 1. Fetch the gift from the database
     gift = await crud.gift.get_gift(db=db, gift_id=gift_id)
@@ -113,20 +112,6 @@ async def read_gift(
     # If the wishlist or the specific gift is hidden, we pretend it doesn't exist (404)
     if not wishlist.is_visible or not gift.is_visible:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gift not found")
-
-    # 5. Access Rule C: Check if the current user is subscribed to the wishlist owner
-    subscription = await crud.subscription.get_subscription(
-        db=db,
-	    subscriber_id=int(current_user.id), # type: ignore
-	    subscribed_user_id=int(wishlist.owner_id) # type: ignore
-    )
-
-    # If the subscription object is None, they are not friends
-    if not subscription:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You must be a follower to view this user's wishlists"
-        )
 
     # If all checks pass, return the gift safely
     return gift

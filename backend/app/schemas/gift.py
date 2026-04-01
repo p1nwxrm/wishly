@@ -33,9 +33,9 @@ class GiftUpdate(BaseModel):
 	Properties to receive via API on gift update (PATCH request).
 	All fields are optional because the user might only update one field (e.g., price).
 	"""
-	name: Optional[str] = Field(None, min_length=1, max_length=150)
-	price_usd: Optional[float] = Field(None, gt=0)
-	photo_url: Optional[str] = Field(None, max_length=255)
+	name: Optional[str] = Field(default=None, min_length=1, max_length=150)
+	price_usd: Optional[float] = Field(default=None, gt=0)
+	photo_url: Optional[str] = Field(default=None, max_length=255)
 	link_url: Optional[HttpUrl] = None
 	is_visible: Optional[bool] = None
 	description: Optional[str] = None

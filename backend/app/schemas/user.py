@@ -42,10 +42,10 @@ class UserUpdate(BaseModel):
 	Properties to receive via API on user update (PATCH request).
 	All fields are optional, so the user can update only specific data.
 	"""
-	username: Optional[str] = Field(None, min_length=3, max_length=50, pattern=r"^[a-z0-9_]+$")
-	name: Optional[str] = Field(None, min_length=2, max_length=100)
-	photo_url: Optional[str] = Field(None, max_length=255)
-	password: Optional[str] = Field(None, min_length=8)
+	username: Optional[str] = Field(default=None, min_length=3, max_length=50, pattern=r"^[a-z0-9_]+$")
+	name: Optional[str] = Field(default=None, min_length=2, max_length=100)
+	photo_url: Optional[str] = Field(default=None, max_length=255)
+	password: Optional[str] = Field(default=None, min_length=8)
 
 	# We don't allow updating email here.
 	# Usually, changing an email requires a separate confirmation flow for security.

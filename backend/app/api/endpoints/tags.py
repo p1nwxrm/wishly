@@ -118,5 +118,4 @@ async def delete_existing_tag(
 		)
 
 	await crud.tag.delete_tag(db=db, tag_id=tag_id)
-
 	return {"status": "success", "message": "Tag successfully deleted"}

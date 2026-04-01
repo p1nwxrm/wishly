@@ -68,19 +68,6 @@ async def read_wishlist(
     if not wishlist.is_visible:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wishlist not found")
 
-    # 4. Access Rule C: Check if the user is subscribed to the wishlist owner
-    subscription = await crud.subscription.get_subscription(
-        db=db,
-        subscriber_id=int(current_user.id),  # type: ignore
-        subscribed_user_id=int(wishlist.owner_id)  # type: ignore
-    )
-
-    if not subscription:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You must follow this user to view their wishlists"
-        )
-
     # All checks passed securely
     return wishlist
 
@@ -99,23 +86,10 @@ async def read_user_wishlists(
     if user_id == current_user.id:
         return await crud.wishlist.get_wishlists_by_owner(db=db, owner_id=user_id)
 
-    # 2. Check if the current user is subscribed to the target user
-    subscription = await crud.subscription.get_subscription(
-        db=db,
-        subscriber_id=int(current_user.id),  # type: ignore
-        subscribed_user_id=user_id
-    )
-
-    if not subscription:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You must follow this user to view their wishlists"
-        )
-
-    # 3. Fetch all wishlists for the target user from the database
+    # 2. Fetch all wishlists for the target user from the database
     all_wishlists = await crud.wishlist.get_wishlists_by_owner(db=db, owner_id=user_id)
 
-    # 4. Filter the list to only include visible wishlists
+    # 3. Filter the list to only include visible wishlists
     # We use a Python list comprehension to filter the data in memory
     visible_wishlists = [wishlist for wishlist in all_wishlists if wishlist.is_visible]
 
@@ -145,18 +119,6 @@ async def read_wishlist_gifts(
         # Hide the wishlist if it is set to private
         if not wishlist.is_visible:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wishlist not found")
-
-        # Check if the current user is subscribed to the owner
-        subscription = await crud.subscription.get_subscription(
-            db=db,
-            subscriber_id=int(current_user.id),  # type: ignore
-            subscribed_user_id=int(wishlist.owner_id)  # type: ignore
-        )
-        if not subscription:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You must follow this user to view their gifts"
-            )
 
     # 4. Fetch all gifts from the database
     all_gifts = await crud.gift.get_gifts_by_wishlist(db=db, wishlist_id=wishlist_id)
