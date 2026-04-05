@@ -87,25 +87,27 @@ async def unsubscribe_from_user(
     return {"status": "success", "message": f"Successfully unsubscribed from user {target_user_id}"}
 
 
-@router.get("/followers/me", response_model=List[schemas.user_subscription.UserSubscriptionResponse])
-async def get_my_followers(
+@router.get("/followers/{user_id}", response_model=List[schemas.user_subscription.UserSubscriptionResponse])
+async def get_user_followers(
+    user_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Retrieves a list of users who are following the current authenticated user.
+    Retrieves a list of users who are following a specific user.
     """
-    followers = await crud.subscription.get_followers(db=db, user_id=int(current_user.id))  # type: ignore
+    followers = await crud.subscription.get_followers(db=db, user_id=user_id)
     return followers
 
 
-@router.get("/following/me", response_model=List[schemas.user_subscription.UserSubscriptionResponse])
-async def get_my_following(
+@router.get("/following/{user_id}", response_model=List[schemas.user_subscription.UserSubscriptionResponse])
+async def get_user_following(
+    user_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Retrieves a list of users that the current authenticated user is following.
+    Retrieves a list of users that a specific user is following.
     """
-    following = await crud.subscription.get_following(db=db, user_id=int(current_user.id))  # type: ignore
+    following = await crud.subscription.get_following(db=db, user_id=user_id)
     return following
