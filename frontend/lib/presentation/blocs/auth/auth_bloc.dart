@@ -1,8 +1,9 @@
-import 'dart:io';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
+import 'dart:io';
+import '../../../core/api/api_error_parser.dart';
 import '../../../data/models/user_models.dart';
 import '../../../data/repositories/auth_repository.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -35,19 +36,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthSuccess());
 
     } on DioException catch (e) {
-      // Handle network errors specifically
-      String errorMsg = 'Network error occurred. Please try again.';
-
-      // Try to extract the specific error message from FastAPI (usually in "detail" field)
-      if (e.response != null && e.response?.data != null) {
-        final responseData = e.response?.data;
-        if (responseData is Map<String, dynamic> && responseData.containsKey('detail')) {
-          errorMsg = responseData['detail'].toString();
-        } else {
-          // Fallback if the server returns an unexpected format
-          errorMsg = 'Server error: ${e.response?.statusCode}';
-        }
-      }
+      // Extract error message using our global parser utility
+      final errorMsg = ApiErrorParser.extractMessage(
+        e,
+        defaultMsg: 'Login failed. Please check your credentials and try again.',
+      );
 
       // Emit the extracted error message
       emit(AuthFailure(errorMessage: errorMsg));
@@ -85,16 +78,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthSuccess());
 
     } on DioException catch (e) {
-      String errorMsg = 'Registration failed. Please try again.';
-
-      if (e.response != null && e.response?.data != null) {
-        final responseData = e.response?.data;
-        if (responseData is Map<String, dynamic> && responseData.containsKey('detail')) {
-          errorMsg = responseData['detail'].toString();
-        }
-      }
+      // Extract error message using our global parser utility
+      final errorMsg = ApiErrorParser.extractMessage(
+        e,
+        defaultMsg: 'Registration failed. Please try again.',
+      );
 
       emit(AuthFailure(errorMessage: errorMsg));
+
     } catch (e) {
       emit(AuthFailure(errorMessage: 'An unexpected error occurred.'));
     }

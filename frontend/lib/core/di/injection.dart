@@ -1,18 +1,9 @@
 import 'package:get_it/get_it.dart';
-
 import 'package:dio/dio.dart';
 import '../api/api_client.dart';
 import '../storage/secure_storage_service.dart';
-
-import '../../data/repositories/auth_repository.dart';
-import '../../data/repositories/wishlist_repository.dart';
-import '../../data/repositories/gift_repository.dart';
-import '../../data/repositories/user_repository.dart';
-import '../../data/repositories/subscription_repository.dart';
-import '../../data/repositories/tag_repository.dart';
-import '../../data/repositories/booking_repository.dart';
-
-import '../../presentation/blocs/auth/auth_bloc.dart';
+import '../../data/repositories/repositories.dart';
+import '../../presentation/blocs/blocs.dart';
 
 // Global instance of GetIt service locator
 final getIt = GetIt.instance;
@@ -39,6 +30,7 @@ Future<void> setupDependencies() async {
         () => getIt<ApiClient>().dio,
   );
 
+  // 3. Repositories
   // Register AuthRepository, injecting Dio and SecureStorageService from GetIt
   getIt.registerLazySingleton<AuthRepository>(
         () => AuthRepository(getIt<Dio>(), getIt<SecureStorageService>()),
@@ -79,5 +71,35 @@ Future<void> setupDependencies() async {
   // This ensures a fresh instance is created if the screen is reopened
   getIt.registerFactory<AuthBloc>(
         () => AuthBloc(getIt<AuthRepository>()),
+  );
+
+  // Register WishlistBloc
+  getIt.registerFactory<WishlistBloc>(
+        () => WishlistBloc(getIt<WishlistRepository>()),
+  );
+
+  // Register GiftBloc
+  getIt.registerFactory<GiftBloc>(
+        () => GiftBloc(getIt<GiftRepository>()),
+  );
+
+  // Register UserBloc
+  getIt.registerFactory<UserBloc>(
+        () => UserBloc(getIt<UserRepository>()),
+  );
+
+  // Register SubscriptionBloc
+  getIt.registerFactory<SubscriptionBloc>(
+        () => SubscriptionBloc(getIt<SubscriptionRepository>()),
+  );
+
+  // Register BookingBloc
+  getIt.registerFactory<BookingBloc>(
+        () => BookingBloc(getIt<BookingRepository>()),
+  );
+
+  // Register TagBloc
+  getIt.registerFactory<TagBloc>(
+        () => TagBloc(getIt<TagRepository>()),
   );
 }
