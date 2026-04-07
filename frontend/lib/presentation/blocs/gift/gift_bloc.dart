@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import '../../../core/api/api_error_parser.dart';
 import '../../../data/models/gift_models.dart';
 import '../../../data/repositories/gift_repository.dart';
@@ -12,8 +13,9 @@ part 'gift_state.dart';
 // Bloc responsible for managing individual gift logic
 class GiftBloc extends Bloc<GiftEvent, GiftState> {
   final GiftRepository _giftRepository;
+  final Talker _talker;
 
-  GiftBloc(this._giftRepository) : super(GiftInitial()) {
+  GiftBloc(this._giftRepository, this._talker) : super(GiftInitial()) {
     on<LoadGiftDetails>(_onLoadGiftDetails);
     on<CreateGift>(_onCreateGift);
     on<UpdateGift>(_onUpdateGift);
@@ -30,9 +32,11 @@ class GiftBloc extends Bloc<GiftEvent, GiftState> {
     try {
       final gift = await _giftRepository.getGiftById(event.giftId);
       emit(GiftLoaded(gift: gift));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       emit(GiftError(message: ApiErrorParser.extractMessage(e)));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const GiftError(message: 'An unexpected error occurred.'));
     }
   }
@@ -53,9 +57,11 @@ class GiftBloc extends Bloc<GiftEvent, GiftState> {
       }
 
       emit(const GiftActionSuccess(message: 'Gift successfully created!'));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       emit(GiftError(message: ApiErrorParser.extractMessage(e)));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const GiftError(message: 'An unexpected error occurred.'));
     }
   }
@@ -70,9 +76,11 @@ class GiftBloc extends Bloc<GiftEvent, GiftState> {
       final updatedGift = await _giftRepository.updateGift(event.giftId, event.updateModel);
       // Emit the updated gift so the UI instantly reflects the changes
       emit(GiftLoaded(gift: updatedGift));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       emit(GiftError(message: ApiErrorParser.extractMessage(e)));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const GiftError(message: 'An unexpected error occurred.'));
     }
   }
@@ -87,9 +95,11 @@ class GiftBloc extends Bloc<GiftEvent, GiftState> {
       final updatedGift = await _giftRepository.uploadGiftPhoto(event.giftId, event.photoFile);
       // Emit the updated gift so the UI can refresh the image
       emit(GiftLoaded(gift: updatedGift));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       emit(GiftError(message: ApiErrorParser.extractMessage(e)));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const GiftError(message: 'An unexpected error occurred.'));
     }
   }
@@ -103,9 +113,11 @@ class GiftBloc extends Bloc<GiftEvent, GiftState> {
     try {
       await _giftRepository.deleteGift(event.giftId);
       emit(const GiftActionSuccess(message: 'Gift successfully deleted.'));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       emit(GiftError(message: ApiErrorParser.extractMessage(e)));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const GiftError(message: 'An unexpected error occurred.'));
     }
   }

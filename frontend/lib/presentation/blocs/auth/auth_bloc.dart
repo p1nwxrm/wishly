@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
 import 'dart:io';
+import 'package:talker_flutter/talker_flutter.dart';
 import '../../../core/api/api_error_parser.dart';
 import '../../../data/models/user_models.dart';
 import '../../../data/repositories/auth_repository.dart';
@@ -11,10 +13,12 @@ part 'auth_state.dart';
 // Bloc responsible for managing authentication state
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
+  final Talker _talker;
 
   // We inject AuthRepository into the BLoC and set the initial state
-  AuthBloc(this._authRepository) : super(AuthInitial()) {
+  AuthBloc(this._authRepository, this._talker) : super(AuthInitial()) {
     // Register event handlers
+    on<AuthCheckRequested>(_onAuthCheckRequested);
     on<LoginRequested>(_onLoginRequested);
     on<RegisterRequested>(_onRegisterRequested);
     on<LogoutRequested>(_onLogoutRequested);
@@ -35,7 +39,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // If successful, tell UI to navigate to the main screen
       emit(AuthSuccess());
 
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      // Log the structured network error
+      _talker.handle(e, st);
+
       // Extract error message using our global parser utility
       final errorMsg = ApiErrorParser.extractMessage(
         e,
@@ -44,9 +51,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       // Emit the extracted error message
       emit(AuthFailure(errorMessage: errorMsg));
-
-    } catch (e) {
-      // Handle any other unexpected non-network errors
+    } catch (e, st) {
+      // Log and handle any other unexpected non-network errors
+      _talker.handle(e, st);
       emit(AuthFailure(errorMessage: 'An unexpected error occurred.'));
     }
   }
@@ -77,7 +84,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // 4. Everything succeeded, navigate to home screen
       emit(AuthSuccess());
 
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
+
       // Extract error message using our global parser utility
       final errorMsg = ApiErrorParser.extractMessage(
         e,
@@ -86,7 +95,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       emit(AuthFailure(errorMessage: errorMsg));
 
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(AuthFailure(errorMessage: 'An unexpected error occurred.'));
     }
   }
@@ -102,10 +112,42 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _authRepository.logout();
       // Reset to initial state after logout
       emit(AuthInitial());
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       // Even if the network logout fails, local storage is cleared,
       // so we still reset the state
       emit(AuthInitial());
+    }
+  }
+
+  // Handler for the AuthCheckRequested event
+  Future<void> _onAuthCheckRequested(
+      AuthCheckRequested event,
+      Emitter<AuthState> emit,
+      ) async {
+    emit(AuthLoading());
+
+    try {
+      // 1. Fast local check: do we even have a token string?
+      final hasToken = await _authRepository.hasValidToken();
+
+      if (!hasToken) {
+        // If storage is completely empty, don't even bother the server
+        emit(AuthUnauthenticated());
+        return;
+      }
+
+      // 2. Strict network check: ping the server to validate/refresh tokens
+      final currentUser = await _authRepository.verifySession();
+
+      // 3. Tokens are 100% valid. Pass the user data to the success state.
+      emit(AuthSuccess(user: currentUser));
+
+    } catch (e, st) {
+      _talker.handle(e, st);
+      // If verifySession() throws an error (e.g., interceptor failed to refresh),
+      // we catch it here and send the user to the WelcomeScreen
+      emit(AuthUnauthenticated());
     }
   }
 }

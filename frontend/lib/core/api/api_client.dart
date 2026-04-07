@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:talker_dio_logger/talker_dio_logger.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import '../storage/secure_storage_service.dart';
 import '../utils/app_constants.dart';
 import 'auth_interceptor.dart';
@@ -8,8 +10,12 @@ import 'auth_interceptor.dart';
 class ApiClient {
   late final Dio _dio;
 
-  // We require SecureStorageService to pass it down to the AuthInterceptor
-  ApiClient(SecureStorageService secureStorage) {
+  // We require SecureStorageService and Talker to pass them down
+  ApiClient(
+      SecureStorageService secureStorage,
+      Talker talker, {
+        required VoidCallback onUnauthorized,
+      }) {
     _dio = Dio(
       BaseOptions(
         // Using our global constant for the base URL
@@ -26,14 +32,20 @@ class ApiClient {
     // Add interceptors to the Dio instance
     // Note: Order matters. Auth logic runs first, then the logger prints the final request.
     _dio.interceptors.addAll([
-      AuthInterceptor(_dio, secureStorage),
+      // Pass the callback down to the AuthInterceptor
+      AuthInterceptor(
+          _dio,
+          secureStorage,
+        onUnauthorized: onUnauthorized,
+      ),
       TalkerDioLogger(
+        talker: talker,
         settings: const TalkerDioLoggerSettings(
           printRequestHeaders: true,
           printResponseHeaders: false,
           printResponseMessage: true,
           printRequestData: true,
-          printResponseData: true,
+          printResponseData: false,
         ),
       ),
     ]);

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import '../../../data/models/user_subscription_models.dart';
 import '../../../core/api/api_error_parser.dart';
 import '../../../data/repositories/subscription_repository.dart';
@@ -11,8 +12,9 @@ part 'subscription_state.dart';
 // Bloc responsible for managing followers and following logic
 class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   final SubscriptionRepository _subscriptionRepository;
+  final Talker _talker;
 
-  SubscriptionBloc(this._subscriptionRepository) : super(SubscriptionInitial()) {
+  SubscriptionBloc(this._subscriptionRepository, this._talker) : super(SubscriptionInitial()) {
     on<LoadUserFollowers>(_onLoadUserFollowers);
     on<LoadUserFollowing>(_onLoadUserFollowing);
     on<FollowUser>(_onFollowUser);
@@ -28,10 +30,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     try {
       final followers = await _subscriptionRepository.getUserFollowers(event.userId);
       emit(FollowersLoaded(followers: followers));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(SubscriptionError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const SubscriptionError(message: 'An unexpected error occurred.'));
     }
   }
@@ -45,10 +49,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     try {
       final following = await _subscriptionRepository.getUserFollowing(event.userId);
       emit(FollowingLoaded(following: following));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(SubscriptionError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const SubscriptionError(message: 'An unexpected error occurred.'));
     }
   }
@@ -66,10 +72,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
       // Reload the current user's following list to reflect the new state
       add(LoadUserFollowing(userId: event.currentUserId));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(SubscriptionError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const SubscriptionError(message: 'An unexpected error occurred.'));
     }
   }
@@ -87,10 +95,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
       // Reload the current user's following list to reflect the new state
       add(LoadUserFollowing(userId: event.currentUserId));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(SubscriptionError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const SubscriptionError(message: 'An unexpected error occurred.'));
     }
   }

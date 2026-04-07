@@ -11,6 +11,16 @@ abstract class UserEvent extends Equatable {
 // Event to load the currently authenticated user's profile
 class LoadCurrentUser extends UserEvent {}
 
+// Event to instantly load the user profile using pre-fetched data
+class PreloadUser extends UserEvent {
+  final UserModel user;
+
+  const PreloadUser({required this.user});
+
+  @override
+  List<Object> get props => [user];
+}
+
 // Event to load a specific user's profile by their ID
 class LoadUserById extends UserEvent {
   final int userId;

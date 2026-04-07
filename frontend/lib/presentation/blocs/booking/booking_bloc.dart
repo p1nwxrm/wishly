@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import '../../../data/models/booking_models.dart';
 import '../../../core/api/api_error_parser.dart';
 import '../../../data/repositories/booking_repository.dart';
@@ -11,8 +12,9 @@ part 'booking_state.dart';
 // Bloc responsible for managing gift booking logic
 class BookingBloc extends Bloc<BookingEvent, BookingState> {
   final BookingRepository _bookingRepository;
+  final Talker _talker;
 
-  BookingBloc(this._bookingRepository) : super(BookingInitial()) {
+  BookingBloc(this._bookingRepository, this._talker) : super(BookingInitial()) {
     on<LoadMyBookings>(_onLoadMyBookings);
     on<BookGift>(_onBookGift);
     on<UnbookGift>(_onUnbookGift);
@@ -27,10 +29,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     try {
       final bookings = await _bookingRepository.getMyBookings();
       emit(BookingsLoaded(bookings: bookings));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(BookingError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const BookingError(message: 'An unexpected error occurred.'));
     }
   }
@@ -48,10 +52,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
       // Reload the bookings list to reflect the new state
       add(LoadMyBookings());
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(BookingError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const BookingError(message: 'An unexpected error occurred.'));
     }
   }
@@ -69,10 +75,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
       // Reload the bookings list to reflect the new state
       add(LoadMyBookings());
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(BookingError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const BookingError(message: 'An unexpected error occurred.'));
     }
   }

@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-
+import 'package:flutter/foundation.dart';
 import '../storage/secure_storage_service.dart';
 import '../utils/app_constants.dart';
 import '../../data/models/token_models.dart';
@@ -9,8 +9,10 @@ class AuthInterceptor extends Interceptor {
   final Dio dio;
   final SecureStorageService storage;
 
+  final VoidCallback onUnauthorized;
+
   // We inject SecureStorageService through the constructor
-  AuthInterceptor(this.dio, this.storage);
+  AuthInterceptor(this.dio, this.storage, {required this.onUnauthorized});
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
@@ -40,7 +42,7 @@ class AuthInterceptor extends Interceptor {
       // Prevent infinite loops if the refresh endpoint itself returns 401
       if (err.requestOptions.path.contains('/auth/refresh')) {
         await storage.clearAll(); // Wipe bad tokens
-        // TODO: Redirect user to LoginScreen via auto_route
+        onUnauthorized(); // Trigger the logout callback
         return handler.next(err);
       }
 
@@ -51,7 +53,7 @@ class AuthInterceptor extends Interceptor {
         // If there is no refresh token, we can't refresh. User must log in.
         if (refreshToken == null || refreshToken.isEmpty) {
           await storage.clearAll();
-          // TODO: Redirect user to LoginScreen via auto_route
+          onUnauthorized(); // Trigger the logout callback
           return handler.next(err);
         }
 
@@ -85,7 +87,7 @@ class AuthInterceptor extends Interceptor {
       } on DioException catch (refreshErr) {
         // If refreshing fails (e.g., refresh token is expired or invalid)
         await storage.clearAll();
-        // TODO: Redirect user to LoginScreen via auto_route
+        onUnauthorized(); // Trigger the logout callback
         return handler.next(refreshErr);
       }
     }

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import '../../../data/models/wishlist_models.dart';
 import '../../../core/api/api_error_parser.dart';
 import '../../../data/models/gift_models.dart';
@@ -12,8 +13,9 @@ part 'wishlist_state.dart';
 // Bloc responsible for managing wishlist logic and state
 class WishlistBloc extends Bloc<WishlistEvent, WishlistState> {
   final WishlistRepository _wishlistRepository;
+  final Talker _talker;
 
-  WishlistBloc(this._wishlistRepository) : super(WishlistInitial()) {
+  WishlistBloc(this._wishlistRepository, this._talker) : super(WishlistInitial()) {
     on<LoadMyWishlists>(_onLoadMyWishlists);
     on<LoadUserWishlists>(_onLoadUserWishlists);
     on<LoadWishlistDetails>(_onLoadWishlistDetails);
@@ -31,10 +33,12 @@ class WishlistBloc extends Bloc<WishlistEvent, WishlistState> {
     try {
       final wishlists = await _wishlistRepository.getMyWishlists();
       emit(WishlistsLoaded(wishlists: wishlists));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(WishlistError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const WishlistError(message: 'An unexpected error occurred.'));
     }
   }
@@ -48,10 +52,12 @@ class WishlistBloc extends Bloc<WishlistEvent, WishlistState> {
     try {
       final wishlists = await _wishlistRepository.getUserWishlists(event.userId);
       emit(WishlistsLoaded(wishlists: wishlists));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(WishlistError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const WishlistError(message: 'An unexpected error occurred.'));
     }
   }
@@ -74,10 +80,12 @@ class WishlistBloc extends Bloc<WishlistEvent, WishlistState> {
       final gifts = results[1] as List<GiftModel>;
 
       emit(WishlistDetailsLoaded(wishlist: wishlist, gifts: gifts));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(WishlistError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const WishlistError(message: 'An unexpected error occurred.'));
     }
   }
@@ -93,10 +101,12 @@ class WishlistBloc extends Bloc<WishlistEvent, WishlistState> {
       emit(const WishlistActionSuccess(message: 'Wishlist successfully created!'));
       // Reload the list after successful creation
       add(LoadMyWishlists());
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(WishlistError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const WishlistError(message: 'An unexpected error occurred.'));
     }
   }
@@ -112,10 +122,12 @@ class WishlistBloc extends Bloc<WishlistEvent, WishlistState> {
       emit(const WishlistActionSuccess(message: 'Wishlist successfully updated!'));
       // Reload the list after successful update
       add(LoadMyWishlists());
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(WishlistError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const WishlistError(message: 'An unexpected error occurred.'));
     }
   }
@@ -131,10 +143,12 @@ class WishlistBloc extends Bloc<WishlistEvent, WishlistState> {
       emit(const WishlistActionSuccess(message: 'Wishlist successfully deleted!'));
       // Reload the list after successful deletion
       add(LoadMyWishlists());
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(WishlistError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const WishlistError(message: 'An unexpected error occurred.'));
     }
   }

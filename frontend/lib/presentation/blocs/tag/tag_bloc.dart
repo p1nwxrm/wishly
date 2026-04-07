@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import '../../../data/models/tag_models.dart';
 import '../../../core/api/api_error_parser.dart';
 import '../../../data/repositories/tag_repository.dart';
@@ -11,8 +12,9 @@ part 'tag_state.dart';
 // Bloc responsible for managing custom tags
 class TagBloc extends Bloc<TagEvent, TagState> {
   final TagRepository _tagRepository;
+  final Talker _talker;
 
-  TagBloc(this._tagRepository) : super(TagInitial()) {
+  TagBloc(this._tagRepository, this._talker) : super(TagInitial()) {
     on<LoadMyTags>(_onLoadMyTags);
     on<LoadTagById>(_onLoadTagById);
     on<CreateTag>(_onCreateTag);
@@ -29,10 +31,12 @@ class TagBloc extends Bloc<TagEvent, TagState> {
     try {
       final tags = await _tagRepository.getMyTags();
       emit(TagsLoaded(tags: tags));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(TagError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const TagError(message: 'An unexpected error occurred.'));
     }
   }
@@ -46,10 +50,12 @@ class TagBloc extends Bloc<TagEvent, TagState> {
     try {
       final tag = await _tagRepository.getTagById(event.tagId);
       emit(TagDetailsLoaded(tag: tag));
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(TagError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const TagError(message: 'An unexpected error occurred.'));
     }
   }
@@ -67,10 +73,12 @@ class TagBloc extends Bloc<TagEvent, TagState> {
 
       // Reload the tags list
       add(LoadMyTags());
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(TagError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const TagError(message: 'An unexpected error occurred.'));
     }
   }
@@ -88,10 +96,12 @@ class TagBloc extends Bloc<TagEvent, TagState> {
 
       // Reload the tags list
       add(LoadMyTags());
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(TagError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const TagError(message: 'An unexpected error occurred.'));
     }
   }
@@ -109,10 +119,12 @@ class TagBloc extends Bloc<TagEvent, TagState> {
 
       // Reload the tags list
       add(LoadMyTags());
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(TagError(message: errorMsg));
-    } catch (e) {
+    } catch (e, st) {
+      _talker.handle(e, st);
       emit(const TagError(message: 'An unexpected error occurred.'));
     }
   }

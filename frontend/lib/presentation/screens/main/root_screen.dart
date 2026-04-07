@@ -1,0 +1,15 @@
+import 'package:flutter/material.dart';
+import 'package:auto_route/auto_route.dart';
+
+@RoutePage()
+class RootScreen extends StatelessWidget {
+  const RootScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('RootScreen')),
+      body: const Center(child: Text('Root')),
+    );
+  }
+}

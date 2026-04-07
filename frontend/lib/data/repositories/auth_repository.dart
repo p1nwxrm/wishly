@@ -87,4 +87,32 @@ class AuthRepository {
       await _storage.clearAll();
     }
   }
+
+  // Check if a valid access token exists in storage
+  Future<bool> hasValidToken() async {
+    try {
+      final token = await _storage.getAccessToken();
+      return token != null && token.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Perform a real network request to verify if the session is alive
+  Future<UserModel> verifySession() async {
+    try {
+      // We hit a protected endpoint. Based on your upload method, '/users/me' exists.
+      // If the token is expired, AuthInterceptor will automatically try to refresh it.
+      // If refresh fails, it will throw a DioException.
+      final response = await _dio.get('/users/me');
+
+      // Parse the response into our strongly-typed UserModel
+      return UserModel.fromJson(response.data);
+    } catch (e) {
+      // If the request completely fails (e.g., both tokens are dead),
+      // ensure we clean up local storage and rethrow the error for the BLoC.
+      await _storage.clearAll();
+      rethrow;
+    }
+  }
 }
