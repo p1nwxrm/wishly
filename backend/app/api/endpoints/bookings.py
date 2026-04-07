@@ -41,12 +41,34 @@ async def book_gift(
             detail="You cannot book a gift from your own wishlist"
         )
 
-    # 4. Security Check: Visibility
+    # 4. Security Check: Mutual Subscription
+    # Check if the current user follows the wishlist owner
+    user_follows_owner = await crud.subscription.get_subscription(
+        db=db,
+        subscriber_id=int(current_user.id),  # type: ignore
+        subscribed_user_id=int(wishlist.owner_id)  # type: ignore
+    )
+
+    # Check if the wishlist owner follows the current user back
+    owner_follows_user = await crud.subscription.get_subscription(
+        db=db,
+        subscriber_id=int(wishlist.owner_id),  # type: ignore
+        subscribed_user_id=int(current_user.id)  # type: ignore
+    )
+
+    # If either of the subscriptions is missing, deny the action
+    if not user_follows_owner or not owner_follows_user:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You and the wishlist owner must follow each other to book gifts"
+        )
+
+    # 5. Security Check: Visibility
     # If the wishlist or the specific gift is hidden, pretend it doesn't exist
     if not wishlist.is_visible or not gift.is_visible:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gift not found")
 
-    # 5. Check if the gift is already booked
+    # 6. Check if the gift is already booked
     existing_booking = await crud.booking.get_booking_by_gift(db=db, gift_id=gift_id)
     if existing_booking:
         raise HTTPException(
@@ -54,7 +76,7 @@ async def book_gift(
             detail="This gift is already booked by someone else"
         )
 
-    # 6. Create the booking safely using your Pydantic schema
+    # 7. Create the booking safely using your Pydantic schema
     booking_data = schemas.booking.BookingCreate(
         gift_id=gift_id,
         user_id=int(current_user.id)  # type: ignore
