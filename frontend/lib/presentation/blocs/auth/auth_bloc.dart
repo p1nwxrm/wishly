@@ -16,7 +16,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final Talker _talker;
 
   // We inject AuthRepository into the BLoC and set the initial state
-  AuthBloc(this._authRepository, this._talker) : super(AuthInitial()) {
+  AuthBloc(this._authRepository, this._talker) : super(const AuthInitial()) {
     // Register event handlers
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<LoginRequested>(_onLoginRequested);
@@ -30,14 +30,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       Emitter<AuthState> emit,
       ) async {
     // Tell UI to show a loading indicator
-    emit(AuthLoading());
+    emit(const AuthLoading());
 
     try {
-      // Call the repository to perform the login request
+      // 1. Call the repository to perform the login request and save tokens
       await _authRepository.login(event.email, event.password);
 
-      // If successful, tell UI to navigate to the main screen
-      emit(AuthSuccess());
+      // 2. Fetch the user profile immediately using the fresh tokens
+      final currentUser = await _authRepository.verifySession();
+
+      // 3. Emit success WITH the user to trigger preloading in the UI
+      emit(AuthSuccess(user: currentUser));
 
     } on DioException catch (e, st) {
       // Log the structured network error
@@ -54,7 +57,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } catch (e, st) {
       // Log and handle any other unexpected non-network errors
       _talker.handle(e, st);
-      emit(AuthFailure(errorMessage: 'An unexpected error occurred.'));
+      emit(const AuthFailure(errorMessage: 'An unexpected error occurred.'));
     }
   }
 
@@ -63,7 +66,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       RegisterRequested event,
       Emitter<AuthState> emit,
       ) async {
-    emit(AuthLoading());
+    emit(const AuthLoading());
 
     try {
       // 1. Register the user
@@ -81,8 +84,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await _authRepository.uploadProfilePhoto(event.photoFile!);
       }
 
-      // 4. Everything succeeded, navigate to home screen
-      emit(AuthSuccess());
+      // 4. Fetch the full user profile to ensure a seamless UI transition
+      final currentUser = await _authRepository.verifySession();
+
+      // 5. Everything succeeded, navigate to home screen with preloaded data
+      emit(AuthSuccess(user: currentUser));
 
     } on DioException catch (e, st) {
       _talker.handle(e, st);
@@ -97,7 +103,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     } catch (e, st) {
       _talker.handle(e, st);
-      emit(AuthFailure(errorMessage: 'An unexpected error occurred.'));
+      emit(const AuthFailure(errorMessage: 'An unexpected error occurred.'));
     }
   }
 
@@ -106,17 +112,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       LogoutRequested event,
       Emitter<AuthState> emit,
       ) async {
-    emit(AuthLoading());
+    emit(const AuthLoading());
 
     try {
       await _authRepository.logout();
       // Reset to initial state after logout
-      emit(AuthInitial());
+      emit(const AuthInitial());
     } catch (e, st) {
       _talker.handle(e, st);
       // Even if the network logout fails, local storage is cleared,
       // so we still reset the state
-      emit(AuthInitial());
+      emit(const AuthInitial());
     }
   }
 
@@ -125,7 +131,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthCheckRequested event,
       Emitter<AuthState> emit,
       ) async {
-    emit(AuthLoading());
+    emit(const AuthLoading());
 
     try {
       // 1. Fast local check: do we even have a token string?
@@ -133,7 +139,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       if (!hasToken) {
         // If storage is completely empty, don't even bother the server
-        emit(AuthUnauthenticated());
+        emit(const AuthUnauthenticated());
         return;
       }
 
@@ -147,7 +153,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _talker.handle(e, st);
       // If verifySession() throws an error (e.g., interceptor failed to refresh),
       // we catch it here and send the user to the WelcomeScreen
-      emit(AuthUnauthenticated());
+      emit(const AuthUnauthenticated());
     }
   }
 }

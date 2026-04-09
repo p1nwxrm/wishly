@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
+import '../../widgets/common/custom_app_bar.dart';
 
 @RoutePage()
 class RootScreen extends StatelessWidget {
@@ -8,7 +9,9 @@ class RootScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('RootScreen')),
+      appBar: const CustomAppBar(
+        title: 'RootScreen',
+      ),
       body: const Center(child: Text('Root')),
     );
   }

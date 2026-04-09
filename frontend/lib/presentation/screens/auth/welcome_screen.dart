@@ -21,72 +21,47 @@ class WelcomeScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // App Logo Placeholder (using a built-in icon for now)
-                const Icon(
+                // App Logo Placeholder using the primary color from our theme
+                Icon(
                   Icons.card_giftcard,
                   size: 100,
-                  color: Colors.deepPurple,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(height: 32),
 
-                // Greeting Title
+                // Greeting Title - automatically uses headlineMedium from AppTheme
                 Text(
                   'Welcome to Wishly!',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple,
-                  ),
+                  style: Theme.of(context).textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
 
-                // App Description
+                // App Description - automatically uses bodyLarge from AppTheme
                 Text(
-                  'Create, share, and book gifts easily with your friends.',
+                  'Create, share, and book gifts with your friends.',
                   style: Theme.of(context).textTheme.bodyLarge,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 64),
 
-                // Sign In Button
+                // Sign In Button - automatically styled by elevatedButtonTheme
                 ElevatedButton(
                   onPressed: () {
                     // Push the Sign In screen onto the navigation stack
                     context.router.push(const SignInRoute());
                   },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.deepPurple,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Sign In',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  child: const Text('Sign In'),
                 ),
                 const SizedBox(height: 16),
 
-                // Sign Up Button
+                // Sign Up Button - automatically styled by outlinedButtonTheme
                 OutlinedButton(
                   onPressed: () {
                     // Push the first step of the Sign Up flow onto the stack
                     context.router.push(const SignUpCredentialsRoute());
                   },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    foregroundColor: Colors.deepPurple,
-                    side: const BorderSide(color: Colors.deepPurple, width: 2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Sign Up',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  child: const Text('Sign Up'),
                 ),
               ],
             ),
@@ -96,4 +71,3 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 }
-

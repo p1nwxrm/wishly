@@ -172,18 +172,66 @@ class SignUpCredentialsRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [SignUpProfileScreen]
-class SignUpProfileRoute extends PageRouteInfo<void> {
-  const SignUpProfileRoute({List<PageRouteInfo>? children})
-    : super(SignUpProfileRoute.name, initialChildren: children);
+class SignUpProfileRoute extends PageRouteInfo<SignUpProfileRouteArgs> {
+  SignUpProfileRoute({
+    Key? key,
+    required String email,
+    required String password,
+    List<PageRouteInfo>? children,
+  }) : super(
+         SignUpProfileRoute.name,
+         args: SignUpProfileRouteArgs(
+           key: key,
+           email: email,
+           password: password,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'SignUpProfileRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const SignUpProfileScreen();
+      final args = data.argsAs<SignUpProfileRouteArgs>();
+      return SignUpProfileScreen(
+        key: args.key,
+        email: args.email,
+        password: args.password,
+      );
     },
   );
+}
+
+class SignUpProfileRouteArgs {
+  const SignUpProfileRouteArgs({
+    this.key,
+    required this.email,
+    required this.password,
+  });
+
+  final Key? key;
+
+  final String email;
+
+  final String password;
+
+  @override
+  String toString() {
+    return 'SignUpProfileRouteArgs{key: $key, email: $email, password: $password}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! SignUpProfileRouteArgs) return false;
+    return key == other.key &&
+        email == other.email &&
+        password == other.password;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ email.hashCode ^ password.hashCode;
 }
 
 /// generated route for

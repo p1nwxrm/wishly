@@ -7,6 +7,7 @@ import 'package:talker_bloc_logger/talker_bloc_logger.dart';
 import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
 import 'presentation/blocs/blocs.dart';
+import 'core/theme/app_theme.dart';
 
 void main() {
   // Catch all errors in the global zone
@@ -77,10 +78,7 @@ class WishlyApp extends StatelessWidget {
       child: MaterialApp.router(
         title: 'Wishlist App',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.lightTheme,
         // Delegate routing logic to auto_route
         routerConfig: appRouter.config(
           // Track navigation events using TalkerRouteObserver - logs all route changes

@@ -35,18 +35,16 @@ class _SplashScreenState extends State<SplashScreen> {
           }
 
           // Session is valid, replace splash with the main layout
-          context.router.replace(const RootRoute());
+          context.router.replaceAll([const RootRoute()]);
         } else if (state is AuthUnauthenticated || state is AuthFailure) {
           // No valid session, redirect to the welcome screen
-          context.router.replace(const WelcomeRoute());
+          context.router.replaceAll([const RootRoute()]);
         }
       },
       child: const Scaffold(
         body: Center(
           // Show a loading indicator while the strict network check is in progress
-          child: CircularProgressIndicator(
-            color: Colors.deepPurple,
-          ),
+          child: CircularProgressIndicator(),
         ),
       ),
     );
