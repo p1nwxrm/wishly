@@ -11,7 +11,7 @@ class UserBase(BaseModel):
 	Shared properties across all User schemas.
 	"""
 	username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-z0-9_]+$", description="Unique username")
-	name: str = Field(..., min_length=2, max_length=100, description="User's full display name")
+	name: str = Field(..., min_length=1, max_length=100, description="User's full display name")
 	email: EmailStr = Field(..., description="Valid email address")
 	photo_url: Optional[str] = Field(None, max_length=255)
 
