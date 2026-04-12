@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:talker_bloc_logger/talker_bloc_logger.dart';
+import '../../../core/router/app_route_observer.dart';
 import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
 import 'presentation/blocs/blocs.dart';
@@ -83,7 +84,7 @@ class WishlyApp extends StatelessWidget {
         routerConfig: appRouter.config(
           // Track navigation events using TalkerRouteObserver - logs all route changes
           navigatorObservers: () => [
-            TalkerRouteObserver(getIt<Talker>())
+            AppRouteObserver(getIt<Talker>()),
           ]
         ),
       ),

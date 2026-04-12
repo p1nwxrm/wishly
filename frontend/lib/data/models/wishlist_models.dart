@@ -21,6 +21,9 @@ class WishlistModel extends Equatable {
   @JsonKey(name: 'is_visible')
   final bool isVisible;
 
+  @JsonKey(name: 'gifts_count')
+  final int giftsCount;
+
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
@@ -29,6 +32,7 @@ class WishlistModel extends Equatable {
     required this.ownerId,
     required this.title,
     required this.isVisible,
+    required this.giftsCount,
     required this.createdAt,
   });
 
@@ -39,7 +43,7 @@ class WishlistModel extends Equatable {
   Map<String, dynamic> toJson() => _$WishlistModelToJson(this);
 
   @override
-  List<Object?> get props => [id, ownerId, title, isVisible, createdAt];
+  List<Object?> get props => [id, ownerId, title, isVisible, giftsCount, createdAt];
 }
 
 // ==========================================

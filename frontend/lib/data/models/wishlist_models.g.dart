@@ -12,6 +12,7 @@ WishlistModel _$WishlistModelFromJson(Map<String, dynamic> json) =>
       ownerId: (json['owner_id'] as num).toInt(),
       title: json['title'] as String,
       isVisible: json['is_visible'] as bool,
+      giftsCount: (json['gifts_count'] as num).toInt(),
       createdAt: DateTime.parse(json['created_at'] as String),
     );
 
@@ -21,6 +22,7 @@ Map<String, dynamic> _$WishlistModelToJson(WishlistModel instance) =>
       'owner_id': instance.ownerId,
       'title': instance.title,
       'is_visible': instance.isVisible,
+      'gifts_count': instance.giftsCount,
       'created_at': instance.createdAt.toIso8601String(),
     };
 

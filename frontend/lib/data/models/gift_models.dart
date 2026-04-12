@@ -22,7 +22,7 @@ class GiftModel extends Equatable {
   final String? photoUrl;
 
   @JsonKey(name: 'link_url')
-  final String linkUrl;
+  final String? linkUrl;
 
   @JsonKey(name: 'is_visible')
   final bool isVisible;
@@ -41,7 +41,7 @@ class GiftModel extends Equatable {
     required this.name,
     required this.priceUsd,
     this.photoUrl,
-    required this.linkUrl,
+    this.linkUrl,
     required this.isVisible,
     this.description,
     required this.wishlistId,
@@ -84,7 +84,7 @@ class GiftCreateModel extends Equatable {
   final String? photoUrl;
 
   @JsonKey(name: 'link_url')
-  final String linkUrl;
+  final String? linkUrl;
 
   @JsonKey(name: 'is_visible')
   final bool isVisible;
@@ -99,7 +99,7 @@ class GiftCreateModel extends Equatable {
     required this.name,
     required this.priceUsd,
     this.photoUrl,
-    required this.linkUrl,
+    this.linkUrl,
     this.isVisible = true,
     this.description,
     required this.wishlistId,
