@@ -4,8 +4,8 @@ from sqlalchemy import (
 	String, Integer, Boolean, Numeric, Text, ForeignKey,
 	CheckConstraint, text, DateTime
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column, relationship, column_property
+from sqlalchemy import select, func
 
 # Importing the declarative base from database configuration
 from app.db.database import Base
@@ -122,22 +122,6 @@ class User(Base):
 	)
 
 
-class Wishlist(Base):
-	__tablename__ = "wishlists"
-
-	id: Mapped[int] = mapped_column(primary_key=True)
-	title: Mapped[str] = mapped_column(String(150))
-	owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-
-	# Server default forces MySQL to set this to true (1) if no data is provided
-	is_visible: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("1"))
-	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-	# --- Relationships ---
-	owner: Mapped["User"] = relationship(back_populates="wishlists")
-	gifts: Mapped[List["Gift"]] = relationship(back_populates="wishlist", cascade="all, delete-orphan")
-
-
 class Tag(Base):
 	__tablename__ = "tags"
 
@@ -161,7 +145,7 @@ class Gift(Base):
 	price_usd: Mapped[float] = mapped_column(Numeric(10, 2))
 	photo_url: Mapped[Optional[str]] = mapped_column(String(255))
 	wishlist_id: Mapped[int] = mapped_column(ForeignKey("wishlists.id", ondelete="CASCADE"))
-	link_url: Mapped[str] = mapped_column(String(500))
+	link_url: Mapped[Optional[str]] = mapped_column(String(500))
 	is_visible: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("1"))
 	description: Mapped[Optional[str]] = mapped_column(Text)
 	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -180,3 +164,26 @@ class Gift(Base):
 	# uselist=False strictly enforces a One-to-One perspective.
 	# One gift can only have one booking record.
 	booking_info: Mapped[Optional["Booking"]] = relationship(back_populates="gift", uselist=False, cascade="all, delete-orphan")
+
+
+class Wishlist(Base):
+	__tablename__ = "wishlists"
+
+	id: Mapped[int] = mapped_column(primary_key=True)
+	title: Mapped[str] = mapped_column(String(150))
+	owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+
+	# Server default forces MySQL to set this to true (1) if no data is provided
+	is_visible: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("1"))
+	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+	# --- Relationships ---
+	owner: Mapped["User"] = relationship(back_populates="wishlists")
+	gifts: Mapped[List["Gift"]] = relationship(back_populates="wishlist", cascade="all, delete-orphan")
+
+	gifts_count = column_property(
+		select(func.count(Gift.id))
+		.where(Gift.wishlist_id == id)
+		.correlate_except(Gift)
+		.scalar_subquery()
+	)

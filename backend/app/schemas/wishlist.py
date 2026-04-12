@@ -38,6 +38,7 @@ class WishlistResponse(WishlistBase):
 	id: int
 	owner_id: int
 	created_at: datetime
+	gifts_count: int
 
 	# Enables Pydantic to read data seamlessly from SQLAlchemy ORM models
 	model_config = ConfigDict(from_attributes=True)

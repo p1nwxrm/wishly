@@ -15,7 +15,7 @@ class GiftBase(BaseModel):
 	price_usd: float = Field(..., gt=0, description="Price must be strictly greater than 0")
 	photo_url: Optional[str] = Field(None, max_length=255)
 
-	link_url: HttpUrl = Field(..., description="Valid URL to the gift")
+	link_url: Optional[HttpUrl] = Field(default=None, description="Valid URL to the gift")
 	is_visible: bool = True
 	description: Optional[str] = None
 	wishlist_id: int
