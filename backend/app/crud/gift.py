@@ -1,10 +1,8 @@
 from typing import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
-
 from app.models.models import Gift
 from app.schemas.gift import GiftCreate, GiftUpdate
-
 
 # ==========================================
 # GIFT CRUD OPERATIONS

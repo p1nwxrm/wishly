@@ -5,7 +5,6 @@ from sqlalchemy import select, delete
 from app.models.models import Wishlist
 from app.schemas.wishlist import WishlistCreate, WishlistUpdate
 
-
 # ==========================================
 # WISHLIST CRUD OPERATIONS
 # ==========================================

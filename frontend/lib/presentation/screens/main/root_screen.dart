@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
+import '../../../core/di/injection.dart';
 import '../../../core/router/app_router.dart';
+import '../../blocs/blocs.dart';
 
 @RoutePage()
 class RootScreen extends StatelessWidget {
@@ -21,7 +23,16 @@ class RootScreen extends StatelessWidget {
           selectedIndex: tabsRouter.activeIndex,
 
           // Switch tabs when a user taps an icon
-          onDestinationSelected: tabsRouter.setActiveIndex,
+          onDestinationSelected: (index) {
+            if (tabsRouter.activeIndex == index) {
+              if (index == 0) {
+                getIt<FeedBloc>().add(const LoadFeed(isRefresh: true));
+              }
+              // TODO: refresh logic for Search and Profile
+            } else {
+              tabsRouter.setActiveIndex(index);
+            }
+          },
 
           // Styling using our AppTheme color scheme
           backgroundColor: Theme.of(context).colorScheme.surface,

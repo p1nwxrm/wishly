@@ -5,7 +5,6 @@ from sqlalchemy import select, delete
 from app.models.models import Tag
 from app.schemas.tag import TagCreate, TagUpdate
 
-
 # ==========================================
 # TAG CRUD OPERATIONS
 # ==========================================

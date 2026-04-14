@@ -67,26 +67,45 @@ class WishlyApp extends StatelessWidget {
 
     return MultiBlocProvider(
       providers: [
-        // Providing all BLoCs globally at the top level of the widget tree
         BlocProvider<AuthBloc>(create: (context) => getIt<AuthBloc>()),
         BlocProvider<UserBloc>(create: (context) => getIt<UserBloc>()),
-        BlocProvider<WishlistBloc>(create: (context) => getIt<WishlistBloc>()),
-        BlocProvider<GiftBloc>(create: (context) => getIt<GiftBloc>()),
         BlocProvider<BookingBloc>(create: (context) => getIt<BookingBloc>()),
-        BlocProvider<SubscriptionBloc>(create: (context) => getIt<SubscriptionBloc>()),
-        BlocProvider<TagBloc>(create: (context) => getIt<TagBloc>()),
+        BlocProvider<FeedBloc>(create: (context) => getIt<FeedBloc>()),
       ],
       child: MaterialApp.router(
         title: 'Wishlist App',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        // Delegate routing logic to auto_route
         routerConfig: appRouter.config(
-          // Track navigation events using TalkerRouteObserver - logs all route changes
-          navigatorObservers: () => [
-            AppRouteObserver(getIt<Talker>()),
-          ]
+          // Track navigation events using TalkerRouteObserver
+            navigatorObservers: () => [
+              AppRouteObserver(getIt<Talker>()),
+            ]
         ),
+        // --- GLOBAL APP BUILDER ---
+        // This wraps the entire routing system. It's the perfect place
+        // to listen to global authentication state changes.
+        builder: (context, child) {
+          return BlocListener<AuthBloc, AuthState>(
+            listener: (context, state) {
+              if (state is AuthSuccess) {
+                // 1. Preload user data into the global UserBloc
+                if (state.user != null) {
+                  context.read<UserBloc>().add(PreloadUser(user: state.user!));
+                }
+
+                // 2. Globally redirect to the main application
+                appRouter.replaceAll([const RootRoute()]);
+
+              } else if (state is AuthUnauthenticated) {
+                // If session dies or user logs out, globally redirect to Welcome Screen
+                appRouter.replaceAll([const WelcomeRoute()]);
+              }
+            },
+            // The actual screens of the app (managed by AutoRoute) are passed as 'child'
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
       ),
     );
   }

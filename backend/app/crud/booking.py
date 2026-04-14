@@ -1,10 +1,9 @@
-from typing import Sequence
+from typing import Sequence, List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
-
-from app.models.models import Booking
+from sqlalchemy import select, delete, and_
+from sqlalchemy.orm import aliased
+from app.models.models import Booking, Gift, Wishlist, User, UserSubscription
 from app.schemas.booking import BookingCreate
-
 
 # ==========================================
 # BOOKING CRUD OPERATIONS
@@ -39,17 +38,64 @@ async def get_booking_by_gift(db: AsyncSession, gift_id: int) -> Booking | None:
 	return result.scalar_one_or_none()
 
 
-async def get_bookings_by_user(db: AsyncSession, user_id: int) -> Sequence[Booking]:
+async def get_bookings_by_user(db: AsyncSession, user_id: int) -> List[Dict[str, Any]]:
 	"""
 	Retrieves all gifts booked by a specific user.
-	Useful for displaying a "My Booked Gifts" tab on the frontend.
+	Returns full details (gift info, owner info, mutual subscription status)
+	so the frontend can render complete cards.
 	"""
-	# Filter bookings where the user_id matches the requested user
-	stmt = select(Booking).where(Booking.user_id == user_id)
-	result = await db.execute(stmt)
 
-	# Return a sequence (list) of booking objects
-	return result.scalars().all()
+	# Create an alias of the UserSubscription table to check the reverse subscription
+	ReverseSubscription = aliased(UserSubscription)
+
+	# Subquery to check mutual subscription
+	mutual_sub_query = (
+		select(ReverseSubscription.subscriber_id)
+		.where(
+			and_(
+				ReverseSubscription.subscriber_id == User.id,  # Owner of the gift
+				ReverseSubscription.subscribed_user_id == user_id  # Current logged-in user
+			)
+		)
+		.correlate(User)
+		.exists()
+	)
+
+	stmt = (
+		select(
+			Gift,
+			User.username.label("owner_username"),
+			User.photo_url.label("owner_photo_url"),
+			Booking.user_id.label("booked_by"),
+			mutual_sub_query.label("is_mutual_subscription")
+		)
+		# Start from Booking to only get gifts this user has booked
+		.join(Booking, Gift.id == Booking.gift_id)
+		.join(Wishlist, Gift.wishlist_id == Wishlist.id)
+		.join(User, Wishlist.owner_id == User.id)
+		.where(
+			Booking.user_id == user_id,
+			Gift.is_visible == True,
+			Wishlist.is_visible == True
+		)
+		# Sort by the time they booked it (newest first)
+		.order_by(Booking.created_at.desc())
+	)
+
+	result = await db.execute(stmt)
+	rows = result.all()
+
+	booked_items = []
+	for row in rows:
+		booked_items.append({
+			"gift": row.Gift,
+			"owner_username": row.owner_username,
+			"owner_photo_url": row.owner_photo_url,
+			"booked_by": row.booked_by,
+			"is_mutual_subscription": row.is_mutual_subscription
+		})
+
+	return booked_items
 
 
 async def delete_booking(db: AsyncSession, gift_id: int, user_id: int) -> bool:

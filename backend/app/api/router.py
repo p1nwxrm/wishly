@@ -1,7 +1,7 @@
 from fastapi import APIRouter # type: ignore
 
 # Import all individual endpoint files
-from app.api.endpoints import auth, bookings, gifts, subscriptions, tags, users, wishlists
+from app.api.endpoints import auth, bookings, gifts, subscriptions, tags, users, wishlists, feed
 
 # Create a master router
 api_router = APIRouter()
@@ -14,3 +14,4 @@ api_router.include_router(subscriptions.router)
 api_router.include_router(tags.router)
 api_router.include_router(users.router)
 api_router.include_router(wishlists.router)
+api_router.include_router(feed.router)

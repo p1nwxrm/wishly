@@ -1,7 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:talker_flutter/talker_flutter.dart';
-import '../logger/app_logger.dart'; //
+import '../logger/app_logger.dart';
 import '../api/api_client.dart';
 import '../storage/secure_storage_service.dart';
 import '../router/auth_guard.dart';
@@ -44,9 +44,8 @@ Future<void> setupDependencies() async {
       getIt<SecureStorageService>(),
       getIt<Talker>(),
           onUnauthorized: () {
-            // This callback is triggered by the Interceptor when tokens die.
-            // We tell the global AuthBloc to log the user out.
-            getIt<AuthBloc>().add(LogoutRequested());
+            // This tells the UI to kick the user out WITHOUT trying to call /users/logout on the backend.
+            getIt<AuthBloc>().add(SessionExpired());
           },
     ),
   );
@@ -58,50 +57,81 @@ Future<void> setupDependencies() async {
   );
 
   // 5. Repositories
-  // Register AuthRepository, injecting Dio and SecureStorageService from GetIt
+  // Register AuthRepository
   getIt.registerLazySingleton<AuthRepository>(
         () => AuthRepository(getIt<Dio>(), getIt<SecureStorageService>()),
   );
 
-  // Register WishlistRepository, injecting Dio from GetIt
+  // Register WishlistRepository
   getIt.registerLazySingleton<WishlistRepository>(
         () => WishlistRepository(getIt<Dio>()),
   );
 
-  // Register GiftRepository, injecting Dio from GetIt
+  // Register GiftRepository
   getIt.registerLazySingleton<GiftRepository>(
         () => GiftRepository(getIt<Dio>()),
   );
 
-  // Register UserRepository, injecting Dio from GetIt
+  // Register UserRepository
   getIt.registerLazySingleton<UserRepository>(
         () => UserRepository(getIt<Dio>()),
   );
 
-  // Register SubscriptionRepository, injecting Dio from GetIt
+  // Register SubscriptionRepository
   getIt.registerLazySingleton<SubscriptionRepository>(
         () => SubscriptionRepository(getIt<Dio>()),
   );
 
-  // Register TagRepository, injecting Dio from GetIt
+  // Register TagRepository
   getIt.registerLazySingleton<TagRepository>(
         () => TagRepository(getIt<Dio>()),
   );
 
-  // Register BookingRepository, injecting Dio from GetIt
+  // Register BookingRepository
   getIt.registerLazySingleton<BookingRepository>(
         () => BookingRepository(getIt<Dio>()),
   );
 
-  // Register AuthBloc using a factory
-  // This ensures a fresh instance is created if the screen is reopened
-  getIt.registerFactory<AuthBloc>(
+  // Register FeedRepository
+  getIt.registerLazySingleton<FeedRepository>(
+        () => FeedRepository(getIt<Dio>()),
+  );
+
+  // 6. BLoCs
+  // --- SINGLETONS ---
+  // Register AuthBloc
+  getIt.registerLazySingleton<AuthBloc>(
         () => AuthBloc(
       getIt<AuthRepository>(),
       getIt<Talker>(),
     ),
   );
 
+  // Register UserBloc
+  getIt.registerLazySingleton<UserBloc>(
+        () => UserBloc(
+      getIt<UserRepository>(),
+      getIt<Talker>(),
+    ),
+  );
+
+  // Register BookingBloc
+  getIt.registerLazySingleton<BookingBloc>(
+        () => BookingBloc(
+      getIt<BookingRepository>(),
+      getIt<Talker>(),
+    ),
+  );
+
+  // Register FeedBloc
+  getIt.registerLazySingleton<FeedBloc>(
+        () => FeedBloc(
+      getIt<FeedRepository>(),
+      getIt<Talker>(),
+    ),
+  );
+
+  // --- FACTORIES ---
   // Register WishlistBloc
   getIt.registerFactory<WishlistBloc>(
         () => WishlistBloc(
@@ -118,26 +148,10 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  // Register UserBloc
-  getIt.registerFactory<UserBloc>(
-        () => UserBloc(
-      getIt<UserRepository>(),
-      getIt<Talker>(),
-    ),
-  );
-
   // Register SubscriptionBloc
   getIt.registerFactory<SubscriptionBloc>(
         () => SubscriptionBloc(
       getIt<SubscriptionRepository>(),
-      getIt<Talker>(),
-    ),
-  );
-
-  // Register BookingBloc
-  getIt.registerFactory<BookingBloc>(
-        () => BookingBloc(
-      getIt<BookingRepository>(),
       getIt<Talker>(),
     ),
   );

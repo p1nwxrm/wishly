@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
-
-// Import the generated router to get access to SignInRoute and SignUpCredentialsRoute
 import '../../../core/router/app_router.dart';
 
 @RoutePage()

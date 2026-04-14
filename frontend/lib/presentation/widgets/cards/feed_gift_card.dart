@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../../data/models/gift_models.dart';
+import 'package:frontend/data/models/gift_models.dart';
 import '../avatar/user_avatar.dart';
+import '../common/button_loading_indicator.dart';
 
 class FeedGiftCard extends StatelessWidget {
-  final GiftModel gift;
-  final String ownerUsername;
-  final String? ownerPhotoUrl;
+  final SharedGiftModel feedItem;
 
-  final bool isBooked;
+  final int currentUserId;
+  final bool isLoading;
 
   final VoidCallback onDetailsTap;
   final VoidCallback onBookToggle;
 
   const FeedGiftCard({
     super.key,
-    required this.gift,
-    required this.ownerUsername,
-    this.ownerPhotoUrl,
-    required this.isBooked,
+    required this.feedItem,
+    required this.currentUserId,
+    required this.isLoading,
     required this.onDetailsTap,
     required this.onBookToggle,
   });
@@ -26,6 +25,12 @@ class FeedGiftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final gift = feedItem.gift;
+
+    // --- BUTTON STATE LOGIC ---
+    final isAvailable = feedItem.bookedBy == null;
+    final isBookedByMe = feedItem.bookedBy == currentUserId;
+    final isBookedByOther = !isAvailable && !isBookedByMe;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -39,11 +44,11 @@ class FeedGiftCard extends StatelessWidget {
               children: [
                 UserAvatar(
                   radius: 16,
-                  photoUrl: ownerPhotoUrl,
+                  photoUrl: feedItem.ownerPhotoUrl,
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  '@$ownerUsername added a new gift',
+                  '@${feedItem.ownerUsername}',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -106,25 +111,38 @@ class FeedGiftCard extends StatelessWidget {
                     // Setting equal height for buttons
                     SizedBox(
                       height: 40,
+                      width: 100,
                       child: OutlinedButton(
                         onPressed: onDetailsTap,
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: EdgeInsets.zero,
                         ),
                         child: const Text('Details'),
                       ),
                     ),
                     const SizedBox(width: 8),
+
+                    // --- DYNAMIC BOOKING BUTTON ---
                     SizedBox(
                       height: 40,
+                      width: 100,
                       child: ElevatedButton(
-                        onPressed: onBookToggle,
+                        // Disable the button if booked by someone else
+                        onPressed: isBookedByOther ? null : onBookToggle,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isBooked ? theme.colorScheme.error : theme.colorScheme.primary,
-                          foregroundColor: isBooked ? theme.colorScheme.onError : theme.colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          backgroundColor: isBookedByMe ? theme.colorScheme.error : theme.colorScheme.primary,
+                          foregroundColor: isBookedByMe ? theme.colorScheme.onError : theme.colorScheme.onPrimary,
+                          padding: EdgeInsets.zero,
                         ),
-                        child: Text(isBooked ? 'Unbook' : 'Book'),
+                        child: isLoading
+                            ? const ButtonLoadingIndicator()
+                            : Text(
+                            isBookedByMe
+                                ? 'Unbook'
+                                : isBookedByOther
+                                  ? 'Booked'
+                                  : 'Book',
+                        ),
                       ),
                     ),
                   ],

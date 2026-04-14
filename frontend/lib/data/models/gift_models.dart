@@ -69,6 +69,46 @@ class GiftModel extends Equatable {
 }
 
 // ==========================================
+// SHARED GIFT RESPONSE MODEL
+// Matches SharedGift in FastAPI
+// ==========================================
+@JsonSerializable()
+class SharedGiftModel extends Equatable {
+  @JsonKey(name: 'gift')
+  final GiftModel gift;
+
+  @JsonKey(name: 'owner_username')
+  final String ownerUsername;
+
+  @JsonKey(name: 'owner_photo_url')
+  final String? ownerPhotoUrl;
+
+  // Holds the ID of the user who booked this gift, or null if it's available
+  @JsonKey(name: 'booked_by')
+  final int? bookedBy;
+
+  @JsonKey(name: 'is_mutual_subscription', defaultValue: false)
+  final bool isMutualSubscription;
+
+  const SharedGiftModel({
+    required this.gift,
+    required this.ownerUsername,
+    this.ownerPhotoUrl,
+    this.bookedBy,
+    required this.isMutualSubscription,
+  });
+
+  // Factory constructor for generating a new instance from a JSON map
+  factory SharedGiftModel.fromJson(Map<String, dynamic> json) => _$SharedGiftModelFromJson(json);
+
+  // Method for converting the instance to a JSON map
+  Map<String, dynamic> toJson() => _$SharedGiftModelToJson(this);
+
+  @override
+  List<Object?> get props => [gift, ownerUsername, ownerPhotoUrl, bookedBy, isMutualSubscription];
+}
+
+// ==========================================
 // GIFT CREATE MODEL
 // Matches GiftCreate in FastAPI
 // ==========================================

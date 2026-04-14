@@ -96,10 +96,7 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
       ),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is AuthSuccess) {
-            // Navigate to main feed on successful registration and login
-            context.router.replaceAll([const RootRoute()]);
-          } else if (state is AuthFailure) {
+          if (state is AuthFailure) {
             AppSnackbars.showError(context, state.errorMessage);
           }
         },

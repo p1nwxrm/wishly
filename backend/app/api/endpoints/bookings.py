@@ -117,7 +117,7 @@ async def unbook_gift(
     return {"status": "success", "message": "Booking successfully removed"}
 
 
-@router.get("/me", response_model=List[schemas.booking.BookingResponse])
+@router.get("/me", response_model=List[schemas.gift.SharedGift])
 async def get_my_bookings(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)

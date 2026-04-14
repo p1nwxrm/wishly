@@ -6,10 +6,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, column_property
 from sqlalchemy import select, func
-
-# Importing the declarative base from database configuration
 from app.db.database import Base
-
 
 # ==========================================
 # ASSOCIATION ORM MODELS

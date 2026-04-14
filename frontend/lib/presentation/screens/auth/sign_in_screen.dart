@@ -55,15 +55,7 @@ class _SignInScreenState extends State<SignInScreen> {
       // BlocConsumer handles both UI rebuilding and side effects like navigation
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is AuthSuccess) {
-            // Preload user data if the backend returned it during login
-            if (state.user != null) {
-              context.read<UserBloc>().add(PreloadUser(user: state.user!));
-            }
-
-            // Navigate to the main feed screen and remove login from stack
-            context.router.replaceAll([const RootRoute()]);
-          } else if (state is AuthFailure) {
+          if (state is AuthFailure) {
             // Show error message via snackbar on failure
             AppSnackbars.showError(context, state.errorMessage);
           }

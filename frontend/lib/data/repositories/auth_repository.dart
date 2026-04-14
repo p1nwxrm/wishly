@@ -74,6 +74,11 @@ class AuthRepository {
     }
   }
 
+  // Silently wipe tokens from the device without pinging the backend
+  Future<void> clearLocalSession() async {
+    await _storage.clearAll();
+  }
+
   // Invalidate token on the backend and clear local storage
   Future<void> logout() async {
     try {
@@ -84,7 +89,7 @@ class AuthRepository {
       // If the backend is unreachable, we still must clear local data.
     } finally {
       // Always clear local storage to ensure the user is logged out locally
-      await _storage.clearAll();
+      await clearLocalSession();
     }
   }
 

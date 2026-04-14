@@ -2,8 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
 import 'package:talker_flutter/talker_flutter.dart';
-import '../../../data/models/booking_models.dart';
 import '../../../core/api/api_error_parser.dart';
+import '../../../data/models/gift_models.dart';
 import '../../../data/repositories/booking_repository.dart';
 
 part 'booking_event.dart';
@@ -25,10 +25,10 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       LoadMyBookings event,
       Emitter<BookingState> emit,
       ) async {
-    emit(BookingLoading());
+    emit(BookingsListLoading());
     try {
       final bookings = await _bookingRepository.getMyBookings();
-      emit(BookingsLoaded(bookings: bookings));
+      emit(BookingsListLoaded(bookings: bookings));
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
@@ -44,14 +44,15 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       BookGift event,
       Emitter<BookingState> emit,
       ) async {
+    emit(BookingLoading(giftId: event.giftId));
+
     try {
       await _bookingRepository.bookGift(event.giftId);
 
       // Notify UI about the successful booking
       emit(const BookingActionSuccess(message: 'Gift successfully booked!'));
 
-      // Reload the bookings list to reflect the new state
-      add(LoadMyBookings());
+      // Removed add(LoadMyBookings()) to prevent unnecessary network requests
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
@@ -67,14 +68,15 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       UnbookGift event,
       Emitter<BookingState> emit,
       ) async {
+    emit(BookingLoading(giftId: event.giftId));
+
     try {
       await _bookingRepository.unbookGift(event.giftId);
 
       // Notify UI about the successful unbooking
       emit(const BookingActionSuccess(message: 'Booking successfully removed.'));
 
-      // Reload the bookings list to reflect the new state
-      add(LoadMyBookings());
+      // Removed add(LoadMyBookings()) to prevent unnecessary network requests
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);

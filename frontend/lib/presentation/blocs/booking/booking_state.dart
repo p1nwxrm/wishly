@@ -11,14 +11,24 @@ abstract class BookingState extends Equatable {
 // Initial state before any actions
 class BookingInitial extends BookingState {}
 
-// State showing a loading indicator
-class BookingLoading extends BookingState {}
+// State showing a loading indicator for the entire list of bookings (e.g., in Profile)
+class BookingsListLoading extends BookingState {}
+
+// State showing a loading indicator for a specific gift action (Book/Unbook)
+class BookingLoading extends BookingState {
+  final int giftId;
+
+  const BookingLoading({required this.giftId});
+
+  @override
+  List<Object?> get props => [giftId];
+}
 
 // State showing the successfully loaded list of bookings
-class BookingsLoaded extends BookingState {
-  final List<BookingModel> bookings;
+class BookingsListLoaded extends BookingState {
+  final List<SharedGiftModel> bookings;
 
-  const BookingsLoaded({required this.bookings});
+  const BookingsListLoaded({required this.bookings});
 
   @override
   List<Object?> get props => [bookings];

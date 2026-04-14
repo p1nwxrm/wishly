@@ -4,6 +4,7 @@ from . import wishlist
 from . import tag
 from . import booking
 from . import subscription
+from . import feed
 
 # Define __all__ to explicitly declare the public API of the core package.
 # This tells other developers (and IDEs) exactly what is safe to import.
@@ -14,4 +15,5 @@ __all__ = [
     "tag",
     "booking",
     "subscription",
+	"feed",
 ]

@@ -1,5 +1,5 @@
 from .booking import BookingCreate, BookingResponse
-from .gift import GiftCreate, GiftUpdate, GiftResponse
+from .gift import GiftCreate, GiftUpdate, GiftResponse, SharedGift
 from .subscription_type import SubscriptionTypeCreate, SubscriptionTypeResponse
 from .tag import TagCreate, TagUpdate, TagResponse
 from .user import UserCreate, UserUpdate, UserResponse
@@ -18,6 +18,7 @@ __all__ = [
     "GiftCreate",
     "GiftUpdate",
     "GiftResponse",
+	"SharedGift",
 
     # Subscription Type
     "SubscriptionTypeCreate",

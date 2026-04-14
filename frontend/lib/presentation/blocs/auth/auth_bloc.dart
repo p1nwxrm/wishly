@@ -22,6 +22,38 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LoginRequested>(_onLoginRequested);
     on<RegisterRequested>(_onRegisterRequested);
     on<LogoutRequested>(_onLogoutRequested);
+    on<SessionExpired>(_onSessionExpired);
+  }
+
+  // Handler for the AuthCheckRequested event
+  Future<void> _onAuthCheckRequested(
+      AuthCheckRequested event,
+      Emitter<AuthState> emit,
+      ) async {
+    emit(const AuthLoading());
+
+    try {
+      // 1. Fast local check: do we even have a token string?
+      final hasToken = await _authRepository.hasValidToken();
+
+      if (!hasToken) {
+        // If storage is completely empty, don't even bother the server
+        emit(const AuthUnauthenticated());
+        return;
+      }
+
+      // 2. Strict network check: ping the server to validate/refresh tokens
+      final currentUser = await _authRepository.verifySession();
+
+      // 3. Tokens are 100% valid. Pass the user data to the success state.
+      emit(AuthSuccess(user: currentUser));
+
+    } catch (e, st) {
+      _talker.handle(e, st);
+      // If verifySession() throws an error (e.g., interceptor failed to refresh),
+      // we catch it here and send the user to the WelcomeScreen
+      emit(const AuthUnauthenticated());
+    }
   }
 
   // Handler for the LoginRequested event
@@ -126,34 +158,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  // Handler for the AuthCheckRequested event
-  Future<void> _onAuthCheckRequested(
-      AuthCheckRequested event,
+  // Handler for when the interceptor kills the session
+  Future<void> _onSessionExpired(
+      SessionExpired event,
       Emitter<AuthState> emit,
       ) async {
-    emit(const AuthLoading());
+    // 1. Wipe the invalid tokens from local storage
+    await _authRepository.clearLocalSession();
 
-    try {
-      // 1. Fast local check: do we even have a token string?
-      final hasToken = await _authRepository.hasValidToken();
-
-      if (!hasToken) {
-        // If storage is completely empty, don't even bother the server
-        emit(const AuthUnauthenticated());
-        return;
-      }
-
-      // 2. Strict network check: ping the server to validate/refresh tokens
-      final currentUser = await _authRepository.verifySession();
-
-      // 3. Tokens are 100% valid. Pass the user data to the success state.
-      emit(AuthSuccess(user: currentUser));
-
-    } catch (e, st) {
-      _talker.handle(e, st);
-      // If verifySession() throws an error (e.g., interceptor failed to refresh),
-      // we catch it here and send the user to the WelcomeScreen
-      emit(const AuthUnauthenticated());
-    }
+    // 2. Just emit unauthenticated immediately.
+    // Do NOT call _authRepository.logout() here to avoid infinite loops!
+    emit(const AuthUnauthenticated());
   }
 }

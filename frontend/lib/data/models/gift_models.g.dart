@@ -11,7 +11,7 @@ GiftModel _$GiftModelFromJson(Map<String, dynamic> json) => GiftModel(
   name: json['name'] as String,
   priceUsd: (json['price_usd'] as num).toDouble(),
   photoUrl: json['photo_url'] as String?,
-  linkUrl: json['link_url'] as String,
+  linkUrl: json['link_url'] as String?,
   isVisible: json['is_visible'] as bool,
   description: json['description'] as String?,
   wishlistId: (json['wishlist_id'] as num).toInt(),
@@ -30,12 +30,30 @@ Map<String, dynamic> _$GiftModelToJson(GiftModel instance) => <String, dynamic>{
   'created_at': instance.createdAt.toIso8601String(),
 };
 
+SharedGiftModel _$SharedGiftModelFromJson(Map<String, dynamic> json) =>
+    SharedGiftModel(
+      gift: GiftModel.fromJson(json['gift'] as Map<String, dynamic>),
+      ownerUsername: json['owner_username'] as String,
+      ownerPhotoUrl: json['owner_photo_url'] as String?,
+      bookedBy: (json['booked_by'] as num?)?.toInt(),
+      isMutualSubscription: json['is_mutual_subscription'] as bool? ?? false,
+    );
+
+Map<String, dynamic> _$SharedGiftModelToJson(SharedGiftModel instance) =>
+    <String, dynamic>{
+      'gift': instance.gift,
+      'owner_username': instance.ownerUsername,
+      'owner_photo_url': instance.ownerPhotoUrl,
+      'booked_by': instance.bookedBy,
+      'is_mutual_subscription': instance.isMutualSubscription,
+    };
+
 GiftCreateModel _$GiftCreateModelFromJson(Map<String, dynamic> json) =>
     GiftCreateModel(
       name: json['name'] as String,
       priceUsd: (json['price_usd'] as num).toDouble(),
       photoUrl: json['photo_url'] as String?,
-      linkUrl: json['link_url'] as String,
+      linkUrl: json['link_url'] as String?,
       isVisible: json['is_visible'] as bool? ?? true,
       description: json['description'] as String?,
       wishlistId: (json['wishlist_id'] as num).toInt(),

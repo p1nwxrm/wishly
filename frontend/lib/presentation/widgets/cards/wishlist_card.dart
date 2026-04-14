@@ -5,7 +5,6 @@ import '../../../data/models/wishlist_models.dart';
 class WishlistCard extends StatelessWidget {
   final WishlistModel wishlist;
 
-  // Flag to determine if the current user is the owner to show/hide management actions.
   final bool isOwner;
   final VoidCallback onTap;
 

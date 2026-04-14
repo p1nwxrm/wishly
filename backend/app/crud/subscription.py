@@ -1,10 +1,8 @@
 from typing import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
-
 from app.models.models import UserSubscription
 from app.schemas.user_subscription import UserSubscriptionCreate
-
 
 # ==========================================
 # USER SUBSCRIPTION CRUD OPERATIONS

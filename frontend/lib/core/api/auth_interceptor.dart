@@ -19,7 +19,8 @@ class AuthInterceptor extends Interceptor {
     // 1. Skip token injection for endpoints that do not require it
     if (options.path.contains('/auth/login') ||
         options.path.contains('/users/register') ||
-        options.path.contains('/auth/refresh')) {
+        options.path.contains('/auth/refresh') ||
+        options.path.contains('/users/logout')) {
       return handler.next(options);
     }
 

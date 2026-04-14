@@ -8,6 +8,11 @@ abstract class AuthEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+// Event triggered when the app starts to check for existing session
+class AuthCheckRequested extends AuthEvent {
+  const AuthCheckRequested();
+}
+
 // Event triggered when the user attempts to log in
 class LoginRequested extends AuthEvent {
   final String email;
@@ -39,7 +44,6 @@ class LogoutRequested extends AuthEvent {
   const LogoutRequested();
 }
 
-// Event triggered when the app starts to check for existing session
-class AuthCheckRequested extends AuthEvent {
-  const AuthCheckRequested();
-}
+// Event triggered when the interceptor detects a dead session.
+// This does NOT attempt a network logout, it just kills the local session.
+class SessionExpired extends AuthEvent {}
