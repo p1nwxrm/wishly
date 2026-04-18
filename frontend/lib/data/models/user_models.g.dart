@@ -59,3 +59,35 @@ Map<String, dynamic> _$UserUpdateModelToJson(UserUpdateModel instance) =>
       'photo_url': ?instance.photoUrl,
       'password': ?instance.password,
     };
+
+UserCompactModel _$UserCompactModelFromJson(Map<String, dynamic> json) =>
+    UserCompactModel(
+      id: (json['id'] as num).toInt(),
+      username: json['username'] as String,
+      name: json['name'] as String,
+      photoUrl: json['photo_url'] as String?,
+    );
+
+Map<String, dynamic> _$UserCompactModelToJson(UserCompactModel instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'username': instance.username,
+      'name': instance.name,
+      'photo_url': instance.photoUrl,
+    };
+
+UserProfileModel _$UserProfileModelFromJson(Map<String, dynamic> json) =>
+    UserProfileModel(
+      user: UserCompactModel.fromJson(json['user'] as Map<String, dynamic>),
+      followersCount: (json['followers_count'] as num).toInt(),
+      followingCount: (json['following_count'] as num).toInt(),
+      isFollowedByMe: json['is_followed_by_me'] as bool? ?? false,
+    );
+
+Map<String, dynamic> _$UserProfileModelToJson(UserProfileModel instance) =>
+    <String, dynamic>{
+      'user': instance.user,
+      'followers_count': instance.followersCount,
+      'following_count': instance.followingCount,
+      'is_followed_by_me': instance.isFollowedByMe,
+    };

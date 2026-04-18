@@ -3,8 +3,6 @@ import '../../../data/models/user_models.dart';
 import '../avatar/user_avatar.dart';
 import '../common/button_loading_indicator.dart';
 
-// A card widget displaying a user's brief profile information.
-// Used in search results, followers, and following lists.
 class UserCard extends StatelessWidget {
   final UserModel user;
 

@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, or_
+from sqlalchemy import select, delete, func, and_, or_
 
-from app.models.models import User, SubscriptionType
+from app.models.models import User, UserSubscription, SubscriptionType
 from app.schemas.user import UserCreate, UserUpdate
 
 from app.core.security import get_password_hash
@@ -68,6 +68,69 @@ async def get_user_by_username(db: AsyncSession, username: str) -> User | None:
     stmt = select(User).where(User.username == username)
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
+
+
+async def get_user_profile_data(db: AsyncSession, username: str, current_user_id: int) -> dict | None:
+    """
+    Retrieves a user's profile along with their followers/following counts
+    and a boolean flag indicating if the current logged-in user follows them.
+    """
+    followers_sq = (
+        select(func.count(UserSubscription.subscriber_id))
+        .where(UserSubscription.subscribed_user_id == User.id)
+        .correlate(User)
+        .scalar_subquery()
+    )
+
+    following_sq = (
+        select(func.count(UserSubscription.subscribed_user_id))
+        .where(UserSubscription.subscriber_id == User.id)
+        .correlate(User)
+        .scalar_subquery()
+    )
+
+    is_followed_sq = (
+        select(UserSubscription.subscriber_id)
+        .where(
+            and_(
+                UserSubscription.subscriber_id == current_user_id,
+                UserSubscription.subscribed_user_id == User.id
+            )
+        )
+        .correlate(User)
+        .exists()
+    )
+
+    stmt = (
+        select(
+            User.id,
+            User.username,
+            User.name,
+            User.photo_url,
+            followers_sq.label("followers_count"),
+            following_sq.label("following_count"),
+            is_followed_sq.label("is_followed_by_me")
+        )
+        .where(User.username == username)
+    )
+
+    result = await db.execute(stmt)
+    row = result.first()
+
+    if not row:
+        return None
+
+    return {
+        "user": {
+            "id": row.id,
+            "username": row.username,
+            "name": row.name,
+            "photo_url": row.photo_url
+        },
+        "followers_count": row.followers_count or 0,
+        "following_count": row.following_count or 0,
+        "is_followed_by_me": row.is_followed_by_me
+    }
 
 
 async def search_users(db: AsyncSession, search_query: str, limit: int = 20) -> list[User]:

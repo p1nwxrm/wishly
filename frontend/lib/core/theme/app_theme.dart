@@ -17,6 +17,9 @@ class AppTheme {
   static const Color _textPrimaryColor = Color(0xFF1E293B);
   static const Color _textSecondaryColor = Color(0xFF64748B);
 
+  // Neutral grey color for secondary UI surfaces (e.g., Edit/Share buttons) to provide visual contrast
+  static const Color secondarySurfaceColor = Color(0xFFE2E8F0);
+
   // Getter for the complete light theme data
   static ThemeData get lightTheme {
     // Create base text theme using Nunito font

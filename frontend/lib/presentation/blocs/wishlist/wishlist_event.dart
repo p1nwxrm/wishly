@@ -9,7 +9,13 @@ abstract class WishlistEvent extends Equatable {
 }
 
 // Event to fetch the current user's wishlists
-class LoadMyWishlists extends WishlistEvent {}
+class LoadMyWishlists extends WishlistEvent {
+  final bool isRefresh;
+  const LoadMyWishlists({this.isRefresh = false});
+
+  @override
+  List<Object?> get props => [isRefresh];
+}
 
 // Event to fetch another user's wishlists
 class LoadUserWishlists extends WishlistEvent {

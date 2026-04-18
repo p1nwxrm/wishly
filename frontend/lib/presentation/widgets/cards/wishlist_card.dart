@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/wishlist_models.dart';
 
-// A card widget displaying a summary of a user's wishlist.
 class WishlistCard extends StatelessWidget {
   final WishlistModel wishlist;
+  final int currentUserId;
 
-  final bool isOwner;
   final VoidCallback onTap;
-
-  // Optional callbacks for owner-specific actions
   final VoidCallback? onToggleVisibility;
   final VoidCallback? onDelete;
 
   const WishlistCard({
     super.key,
     required this.wishlist,
-    required this.isOwner,
+    required this.currentUserId,
     required this.onTap,
     this.onToggleVisibility,
     this.onDelete,
@@ -24,6 +21,7 @@ class WishlistCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isOwner = wishlist.ownerId == currentUserId;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0),

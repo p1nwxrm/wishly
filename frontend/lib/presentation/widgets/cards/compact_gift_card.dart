@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/gift_models.dart';
 import '../avatar/user_avatar.dart';
 import '../common/button_loading_indicator.dart';
+import '../common/app_cached_network_image.dart';
 
 class CompactFeedGiftCard extends StatelessWidget {
   final SharedGiftModel sharedGift;
   final int currentUserId;
+
   final bool isLoading;
+  final bool showOwnerInfo;
 
   final VoidCallback onDetailsTap;
-  final VoidCallback onBookToggle;
+  final VoidCallback? onDelete;
+  final VoidCallback? onBookToggle;
 
   const CompactFeedGiftCard({
     super.key,
     required this.sharedGift,
     required this.currentUserId,
     required this.isLoading,
+    this.showOwnerInfo = true,
     required this.onDetailsTap,
-    required this.onBookToggle,
+    this.onDelete,
+    this.onBookToggle,
   });
 
   @override
@@ -27,6 +32,8 @@ class CompactFeedGiftCard extends StatelessWidget {
     final gift = sharedGift.gift;
 
     // --- BUTTON STATE LOGIC ---
+    final isOwner = sharedGift.owner.id == currentUserId;
+
     final isAvailable = sharedGift.bookedBy == null;
     final isBookedByMe = sharedGift.bookedBy == currentUserId;
     final isBookedByOther = !isAvailable && !isBookedByMe;
@@ -43,19 +50,21 @@ class CompactFeedGiftCard extends StatelessWidget {
             Container(
               width: 88,
               height: 88,
+              // clipBehavior applies the border radius to the child image automatically
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                image: gift.photoUrl != null
-                    ? DecorationImage(
-                  image: CachedNetworkImageProvider(gift.photoUrl!),
-                  fit: BoxFit.cover,
-                )
-                    : null,
               ),
-              child: gift.photoUrl == null
-                  ? Icon(Icons.card_giftcard, size: 32, color: theme.colorScheme.primary.withValues(alpha: 0.5))
-                  : null,
+              // We delegate all URL checking, loading, and error states to our wrapper
+              child: AppCachedNetworkImage(
+                imageUrl: gift.photoUrl,
+                fallbackWidget: Icon(
+                  Icons.card_giftcard,
+                  size: 32,
+                  color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                ),
+              ),
             ),
             const SizedBox(width: 16),
 
@@ -65,27 +74,29 @@ class CompactFeedGiftCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Tiny owner info row
-                  Row(
-                    children: [
-                      UserAvatar(
-                        radius: 10, // Very small avatar
-                        photoUrl: sharedGift.ownerPhotoUrl,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          '@${sharedGift.ownerUsername}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  // Conditionally render the owner info row
+                  if (showOwnerInfo) ...[
+                    Row(
+                      children: [
+                        UserAvatar(
+                          radius: 10,
+                          photoUrl: sharedGift.owner.photoUrl,
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '@${sharedGift.owner.username}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
 
                   // Gift name
                   Text(
@@ -116,7 +127,7 @@ class CompactFeedGiftCard extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Details Button
+                // Details Button (Always visible)
                 SizedBox(
                   height: 34,
                   width: 86,
@@ -131,32 +142,52 @@ class CompactFeedGiftCard extends StatelessWidget {
                     child: const Text('Details', style: TextStyle(fontSize: 13)),
                   ),
                 ),
-                const SizedBox(height: 8), // Spacing between buttons
+                const SizedBox(height: 8),
 
-                // Dynamic Booking Button
-                SizedBox(
-                  height: 34,
-                  width: 86,
-                  child: ElevatedButton(
-                    // Disable the button if booked by someone else OR if it's currently loading
-                    onPressed: (isBookedByOther || isLoading) ? null : onBookToggle,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isBookedByMe ? theme.colorScheme.error : theme.colorScheme.primary,
-                      foregroundColor: isBookedByMe ? theme.colorScheme.onError : theme.colorScheme.onPrimary,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                // Dynamic Secondary Button (Delete if owner, Book/Unbook if guest)
+                if (isOwner) ...[
+                  SizedBox(
+                    height: 34,
+                    width: 86,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : onDelete,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.error,
+                        foregroundColor: theme.colorScheme.onError,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                    ),
-                    child: isLoading
-                        ? const ButtonLoadingIndicator()
-                        : Text(
-                      isBookedByMe ? 'Unbook' :
-                      isBookedByOther ? 'Booked' : 'Book',
-                      style: const TextStyle(fontSize: 13),
+                      child: isLoading
+                          ? const ButtonLoadingIndicator()
+                          : const Text('Delete', style: TextStyle(fontSize: 13)),
                     ),
                   ),
-                ),
+                ] else ...[
+                  SizedBox(
+                    height: 34,
+                    width: 86,
+                    child: ElevatedButton(
+                      onPressed: (isBookedByOther || isLoading) ? null : onBookToggle,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isBookedByMe ? theme.colorScheme.error : theme.colorScheme.primary,
+                        foregroundColor: isBookedByMe ? theme.colorScheme.onError : theme.colorScheme.onPrimary,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: isLoading
+                          ? const ButtonLoadingIndicator()
+                          : Text(
+                        isBookedByMe ? 'Unbook' :
+                        isBookedByOther ? 'Booked' : 'Book',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ],

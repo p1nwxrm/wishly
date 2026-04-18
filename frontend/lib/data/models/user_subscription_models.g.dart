@@ -35,3 +35,16 @@ Map<String, dynamic> _$UserSubscriptionCreateModelToJson(
   'subscribed_user_id': instance.subscribedUserId,
   'subscriber_id': instance.subscriberId,
 };
+
+UserConnectionModel _$UserConnectionModelFromJson(Map<String, dynamic> json) =>
+    UserConnectionModel(
+      user: UserCompactModel.fromJson(json['user'] as Map<String, dynamic>),
+      isFollowedByMe: json['is_followed_by_me'] as bool? ?? false,
+    );
+
+Map<String, dynamic> _$UserConnectionModelToJson(
+  UserConnectionModel instance,
+) => <String, dynamic>{
+  'user': instance.user,
+  'is_followed_by_me': instance.isFollowedByMe,
+};

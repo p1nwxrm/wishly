@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:frontend/data/models/user_models.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'gift_models.g.dart';
@@ -77,13 +78,9 @@ class SharedGiftModel extends Equatable {
   @JsonKey(name: 'gift')
   final GiftModel gift;
 
-  @JsonKey(name: 'owner_username')
-  final String ownerUsername;
+  @JsonKey(name: 'owner')
+  final UserCompactModel owner;
 
-  @JsonKey(name: 'owner_photo_url')
-  final String? ownerPhotoUrl;
-
-  // Holds the ID of the user who booked this gift, or null if it's available
   @JsonKey(name: 'booked_by')
   final int? bookedBy;
 
@@ -92,8 +89,7 @@ class SharedGiftModel extends Equatable {
 
   const SharedGiftModel({
     required this.gift,
-    required this.ownerUsername,
-    this.ownerPhotoUrl,
+    required this.owner,
     this.bookedBy,
     required this.isMutualSubscription,
   });
@@ -105,7 +101,7 @@ class SharedGiftModel extends Equatable {
   Map<String, dynamic> toJson() => _$SharedGiftModelToJson(this);
 
   @override
-  List<Object?> get props => [gift, ownerUsername, ownerPhotoUrl, bookedBy, isMutualSubscription];
+  List<Object?> get props => [gift, owner, bookedBy, isMutualSubscription];
 }
 
 // ==========================================

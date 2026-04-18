@@ -6,4 +6,5 @@ export 'subscription/subscription_bloc.dart';
 export 'tag/tag_bloc.dart';
 export 'user/user_bloc.dart';
 export 'wishlist/wishlist_bloc.dart';
+export 'profile/profile_bloc.dart';
 export 'feed/feed_bloc.dart';

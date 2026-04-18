@@ -29,13 +29,13 @@ class SubscriptionRepository {
   }
 
   // Get a list of users who are following a specific user
-  Future<List<UserSubscriptionModel>> getUserFollowers(int userId) async {
+  Future<List<UserConnectionModel>> getUserFollowers(int userId) async {
     try {
       final response = await _dio.get('/subscriptions/followers/$userId');
 
-      // Map the incoming JSON list to a List of UserSubscriptionModel objects
+      // Map the incoming JSON list to a List of UserConnectionModel objects
       return (response.data as List)
-          .map((json) => UserSubscriptionModel.fromJson(json))
+          .map((json) => UserConnectionModel.fromJson(json))
           .toList();
     } catch (e) {
       rethrow;
@@ -43,13 +43,13 @@ class SubscriptionRepository {
   }
 
   // Get a list of users that a specific user is following
-  Future<List<UserSubscriptionModel>> getUserFollowing(int userId) async {
+  Future<List<UserConnectionModel>> getUserFollowing(int userId) async {
     try {
       final response = await _dio.get('/subscriptions/following/$userId');
 
-      // Map the incoming JSON list to a List of UserSubscriptionModel objects
+      // Map the incoming JSON list to a List of UserConnectionModel objects
       return (response.data as List)
-          .map((json) => UserSubscriptionModel.fromJson(json))
+          .map((json) => UserConnectionModel.fromJson(json))
           .toList();
     } catch (e) {
       rethrow;

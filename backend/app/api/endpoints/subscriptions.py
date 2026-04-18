@@ -87,27 +87,25 @@ async def unsubscribe_from_user(
     return {"status": "success", "message": f"Successfully unsubscribed from user {target_user_id}"}
 
 
-@router.get("/followers/{user_id}", response_model=List[schemas.user_subscription.UserSubscriptionResponse])
+@router.get("/followers/{user_id}", response_model=List[schemas.UserConnection])
 async def get_user_followers(
     user_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Retrieves a list of users who are following a specific user.
-    """
-    followers = await crud.subscription.get_followers(db=db, user_id=user_id)
+    followers = await crud.subscription.get_followers_connections(
+        db=db, target_user_id=user_id, current_user_id=current_user.id
+    )
     return followers
 
 
-@router.get("/following/{user_id}", response_model=List[schemas.user_subscription.UserSubscriptionResponse])
+@router.get("/following/{user_id}", response_model=List[schemas.UserConnection])
 async def get_user_following(
     user_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Retrieves a list of users that a specific user is following.
-    """
-    following = await crud.subscription.get_following(db=db, user_id=user_id)
+    following = await crud.subscription.get_following_connections(
+        db=db, target_user_id=user_id, current_user_id=current_user.id
+    )
     return following

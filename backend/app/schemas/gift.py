@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict, HttpUrl # type: ignore
 from typing import Optional
 from datetime import datetime
+from app.schemas.user import UserCompact
 
 # ==========================================
 # GIFT SCHEMAS
@@ -54,8 +55,7 @@ class GiftResponse(GiftBase):
 
 class SharedGift(BaseModel):
     gift: GiftResponse
-    owner_username: str
-    owner_photo_url: Optional[str] = None
+    owner: UserCompact
     booked_by: Optional[int] = None
     is_mutual_subscription: bool = False
 

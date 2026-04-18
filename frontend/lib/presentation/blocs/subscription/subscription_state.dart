@@ -16,7 +16,7 @@ class SubscriptionLoading extends SubscriptionState {}
 
 // State showing the successfully loaded followers
 class FollowersLoaded extends SubscriptionState {
-  final List<UserSubscriptionModel> followers;
+  final List<UserConnectionModel> followers;
 
   const FollowersLoaded({required this.followers});
 
@@ -26,7 +26,7 @@ class FollowersLoaded extends SubscriptionState {
 
 // State showing the successfully loaded following list
 class FollowingLoaded extends SubscriptionState {
-  final List<UserSubscriptionModel> following;
+  final List<UserConnectionModel> following;
 
   const FollowingLoaded({required this.following});
 

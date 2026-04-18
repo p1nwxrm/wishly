@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/utils/url_utils.dart';
+import '../common/app_cached_network_image.dart';
 
 // A reusable widget to display a user's avatar across the app.
 // It automatically handles the fallback state when the user doesn't have a photo.
@@ -19,20 +21,32 @@ class UserAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
+
+    // Process the raw photoUrl through our global utility
+    final fullImageUrl = UrlUtils.getFullUrl(photoUrl);
+    final hasPhoto = fullImageUrl != null;
 
     return CircleAvatar(
       radius: radius,
       backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
-      backgroundImage: hasPhoto ? CachedNetworkImageProvider(photoUrl!) : null,
-      child: !hasPhoto
-          ? Icon(
+      backgroundImage: hasPhoto ? CachedNetworkImageProvider(fullImageUrl) : null,
+      child: hasPhoto
+          ? ClipOval(
+        child: AppCachedNetworkImage(
+          imageUrl: photoUrl,
+          fallbackWidget: Icon(
+            Icons.person,
+            size: radius * 1.2,
+            color: colorScheme.primary,
+          ),
+        ),
+      )
+      // Default state when there is no URL provided at all
+          : Icon(
         Icons.person,
-        // Scale the icon size proportionally to the avatar radius.
         size: radius * 1.2,
         color: colorScheme.primary,
-      )
-          : null,
+      ),
     );
   }
 }

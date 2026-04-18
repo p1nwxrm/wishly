@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:frontend/data/models/gift_models.dart';
+import '../../../data/models/gift_models.dart';
 import '../avatar/user_avatar.dart';
 import '../common/button_loading_indicator.dart';
+import '../common/app_cached_network_image.dart';
 
 class FeedGiftCard extends StatelessWidget {
   final SharedGiftModel feedItem;
-
   final int currentUserId;
+
   final bool isLoading;
 
   final VoidCallback onDetailsTap;
@@ -44,11 +44,11 @@ class FeedGiftCard extends StatelessWidget {
               children: [
                 UserAvatar(
                   radius: 16,
-                  photoUrl: feedItem.ownerPhotoUrl,
+                  photoUrl: feedItem.owner.photoUrl,
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  '@${feedItem.ownerUsername}',
+                  '@${feedItem.owner.username}',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -64,16 +64,16 @@ class FeedGiftCard extends StatelessWidget {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withValues(alpha: 0.05),
-                image: gift.photoUrl != null
-                    ? DecorationImage(
-                  image: CachedNetworkImageProvider(gift.photoUrl!),
-                  fit: BoxFit.cover,
-                )
-                    : null,
               ),
-              child: gift.photoUrl == null
-                  ? Icon(Icons.card_giftcard, size: 64, color: theme.colorScheme.primary.withValues(alpha: 0.5))
-                  : null,
+              // Delegate all image loading, caching, and fallback logic to our wrapper
+              child: AppCachedNetworkImage(
+                imageUrl: gift.photoUrl,
+                fallbackWidget: Icon(
+                  Icons.card_giftcard,
+                  size: 64,
+                  color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                ),
+              ),
             ),
           ),
 
@@ -104,11 +104,10 @@ class FeedGiftCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 16), // Spacing between title and buttons
+                const SizedBox(width: 16),
                 Row(
-                  mainAxisSize: MainAxisSize.min, // Prevents buttons from taking full width
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Setting equal height for buttons
                     SizedBox(
                       height: 40,
                       width: 100,
@@ -127,8 +126,7 @@ class FeedGiftCard extends StatelessWidget {
                       height: 40,
                       width: 100,
                       child: ElevatedButton(
-                        // Disable the button if booked by someone else
-                        onPressed: isBookedByOther ? null : onBookToggle,
+                        onPressed: (isBookedByOther || isLoading) ? null : onBookToggle,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isBookedByMe ? theme.colorScheme.error : theme.colorScheme.primary,
                           foregroundColor: isBookedByMe ? theme.colorScheme.onError : theme.colorScheme.onPrimary,
@@ -137,11 +135,8 @@ class FeedGiftCard extends StatelessWidget {
                         child: isLoading
                             ? const ButtonLoadingIndicator()
                             : Text(
-                            isBookedByMe
-                                ? 'Unbook'
-                                : isBookedByOther
-                                  ? 'Booked'
-                                  : 'Book',
+                          isBookedByMe ? 'Unbook' :
+                          isBookedByOther ? 'Booked' : 'Book',
                         ),
                       ),
                     ),

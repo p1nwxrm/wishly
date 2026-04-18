@@ -1,6 +1,6 @@
 from typing import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, desc
 
 from app.models.models import Wishlist
 from app.schemas.wishlist import WishlistCreate, WishlistUpdate
@@ -42,8 +42,11 @@ async def get_wishlists_by_owner(db: AsyncSession, owner_id: int) -> Sequence[Wi
 	"""
 	Retrieves all wishlists created by a specific user.
 	"""
-	# Filter wishlists where the owner_id matches the requested user
-	stmt = select(Wishlist).where(Wishlist.owner_id == owner_id)
+	stmt = (
+        select(Wishlist)
+        .where(Wishlist.owner_id == owner_id)
+        .order_by(desc(Wishlist.created_at))
+    )
 	result = await db.execute(stmt)
 
 	# Return a sequence (list) of wishlist objects

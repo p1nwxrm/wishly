@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/gift_models.dart';
+import '../common/button_loading_indicator.dart';
+import '../common/app_cached_network_image.dart';
 
-// A detailed view of a gift card, typically used in a modal bottom sheet or a separate screen.
 class DetailedGiftCard extends StatelessWidget {
-  final GiftModel gift;
-  final bool isOwner;
-  final bool isBooked;
+  final SharedGiftModel sharedGift;
+  final int currentUserId;
+
+  final bool isLoading;
 
   // Optional callbacks for actions available on this card.
   final VoidCallback? onToggleVisibility;
@@ -16,9 +17,9 @@ class DetailedGiftCard extends StatelessWidget {
 
   const DetailedGiftCard({
     super.key,
-    required this.gift,
-    required this.isOwner,
-    required this.isBooked,
+    required this.sharedGift,
+    required this.currentUserId,
+    this.isLoading = false,
     this.onToggleVisibility,
     this.onDelete,
     this.onBookToggle,
@@ -28,6 +29,13 @@ class DetailedGiftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final gift = sharedGift.gift;
+
+    // --- STATE LOGIC ---
+    final isOwner = sharedGift.owner.id == currentUserId;
+    final isAvailable = sharedGift.bookedBy == null;
+    final isBookedByMe = sharedGift.bookedBy == currentUserId;
+    final isBookedByOther = !isAvailable && !isBookedByMe;
 
     // Check if a valid link exists to dynamically adjust layout spacing
     final hasLink = gift.linkUrl != null && gift.linkUrl!.isNotEmpty;
@@ -37,20 +45,22 @@ class DetailedGiftCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Header Image Section
           Container(
             height: 300,
+            width: double.infinity,
             decoration: BoxDecoration(
               color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              image: gift.photoUrl != null
-                  ? DecorationImage(
-                image: CachedNetworkImageProvider(gift.photoUrl!),
-                fit: BoxFit.cover,
-              )
-                  : null,
             ),
-            child: gift.photoUrl == null
-                ? Icon(Icons.card_giftcard, size: 80, color: theme.colorScheme.primary.withValues(alpha: 0.5))
-                : null,
+            // Delegate image loading, caching, and fallback logic to our wrapper
+            child: AppCachedNetworkImage(
+              imageUrl: gift.photoUrl,
+              fallbackWidget: Icon(
+                Icons.card_giftcard,
+                size: 80,
+                color: theme.colorScheme.primary.withValues(alpha: 0.5),
+              ),
+            ),
           ),
 
           Padding(
@@ -111,7 +121,7 @@ class DetailedGiftCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: onToggleVisibility,
+                            onPressed: isLoading ? null : onToggleVisibility,
                             icon: Icon(gift.isVisible ? Icons.visibility : Icons.visibility_off, size: 18),
                             label: Text(
                               gift.isVisible ? 'Hide' : 'Show',
@@ -129,9 +139,11 @@ class DetailedGiftCard extends StatelessWidget {
                         const SizedBox(width: 16),
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: onDelete,
-                            icon: const Icon(Icons.delete_outline, size: 18),
-                            label: const Text('Delete'),
+                            onPressed: isLoading ? null : onDelete,
+                            icon: isLoading ? const SizedBox.shrink() : const Icon(Icons.delete_outline, size: 18),
+                            label: isLoading
+                                ? const ButtonLoadingIndicator()
+                                : const Text('Delete'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: theme.colorScheme.error,
                               foregroundColor: theme.colorScheme.onError,
@@ -148,13 +160,16 @@ class DetailedGiftCard extends StatelessWidget {
                     width: double.infinity,
                     height: 56, // Taller button for details screen emphasis
                     child: ElevatedButton(
-                      onPressed: onBookToggle,
+                      onPressed: (isBookedByOther || isLoading) ? null : onBookToggle,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isBooked ? theme.colorScheme.error : theme.colorScheme.primary,
-                        foregroundColor: isBooked ? theme.colorScheme.onError : theme.colorScheme.onPrimary,
+                        backgroundColor: isBookedByMe ? theme.colorScheme.error : theme.colorScheme.primary,
+                        foregroundColor: isBookedByMe ? theme.colorScheme.onError : theme.colorScheme.onPrimary,
                       ),
-                      child: Text(
-                        isBooked ? 'Unbook' : 'Book',
+                      child: isLoading
+                          ? const ButtonLoadingIndicator()
+                          : Text(
+                        isBookedByMe ? 'Unbook' :
+                        isBookedByOther ? 'Booked' : 'Book',
                         style: const TextStyle(fontSize: 18),
                       ),
                     ),

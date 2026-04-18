@@ -148,6 +148,14 @@ Future<void> setupDependencies() async {
     ),
   );
 
+  // Register ProfileBloc
+  getIt.registerFactory<ProfileBloc>(
+        () => ProfileBloc(
+      getIt<UserRepository>(),
+      getIt<Talker>(),
+    ),
+  );
+
   // Register SubscriptionBloc
   getIt.registerFactory<SubscriptionBloc>(
         () => SubscriptionBloc(

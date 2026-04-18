@@ -2,8 +2,8 @@ from .booking import BookingCreate, BookingResponse
 from .gift import GiftCreate, GiftUpdate, GiftResponse, SharedGift
 from .subscription_type import SubscriptionTypeCreate, SubscriptionTypeResponse
 from .tag import TagCreate, TagUpdate, TagResponse
-from .user import UserCreate, UserUpdate, UserResponse
-from .user_subscription import UserSubscriptionCreate, UserSubscriptionResponse
+from .user import UserCompact, UserCreate, UserProfile, UserUpdate, UserResponse
+from .user_subscription import UserSubscriptionCreate, UserSubscriptionResponse, UserConnection
 from .wishlist import WishlistCreate, WishlistUpdate, WishlistResponse
 from .token import Token, TokenPayload, TokenRefresh
 
@@ -30,13 +30,16 @@ __all__ = [
     "TagResponse",
 
     # User
+	"UserCompact",
     "UserCreate",
+	"UserProfile",
     "UserUpdate",
     "UserResponse",
 
     # User Subscription
     "UserSubscriptionCreate",
     "UserSubscriptionResponse",
+	"UserConnection",
 
     # Wishlist
     "WishlistCreate",

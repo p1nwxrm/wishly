@@ -33,8 +33,7 @@ Map<String, dynamic> _$GiftModelToJson(GiftModel instance) => <String, dynamic>{
 SharedGiftModel _$SharedGiftModelFromJson(Map<String, dynamic> json) =>
     SharedGiftModel(
       gift: GiftModel.fromJson(json['gift'] as Map<String, dynamic>),
-      ownerUsername: json['owner_username'] as String,
-      ownerPhotoUrl: json['owner_photo_url'] as String?,
+      owner: UserCompactModel.fromJson(json['owner'] as Map<String, dynamic>),
       bookedBy: (json['booked_by'] as num?)?.toInt(),
       isMutualSubscription: json['is_mutual_subscription'] as bool? ?? false,
     );
@@ -42,8 +41,7 @@ SharedGiftModel _$SharedGiftModelFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$SharedGiftModelToJson(SharedGiftModel instance) =>
     <String, dynamic>{
       'gift': instance.gift,
-      'owner_username': instance.ownerUsername,
-      'owner_photo_url': instance.ownerPhotoUrl,
+      'owner': instance.owner,
       'booked_by': instance.bookedBy,
       'is_mutual_subscription': instance.isMutualSubscription,
     };

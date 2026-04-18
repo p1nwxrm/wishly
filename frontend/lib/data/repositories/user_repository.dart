@@ -28,6 +28,16 @@ class UserRepository {
     }
   }
 
+  // Get user profile (stats, connection info) by username
+  Future<UserProfileModel> getUserProfile(String username) async {
+    try {
+      final response = await _dio.get('/users/$username');
+      return UserProfileModel.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // Update the currently authenticated user's profile
   Future<UserModel> updateCurrentUser(UserUpdateModel updateModel) async {
     try {

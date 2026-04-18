@@ -126,3 +126,72 @@ class UserUpdateModel extends Equatable {
   @override
   List<Object?> get props => [username, name, photoUrl, password];
 }
+
+// ==========================================
+// USER COMPACT MODEL
+// Matches UserCompact in FastAPI
+// ==========================================
+@JsonSerializable()
+class UserCompactModel extends Equatable {
+  @JsonKey(name: 'id')
+  final int id;
+
+  @JsonKey(name: 'username')
+  final String username;
+
+  @JsonKey(name: 'name')
+  final String name;
+
+  @JsonKey(name: 'photo_url')
+  final String? photoUrl;
+
+  const UserCompactModel({
+    required this.id,
+    required this.username,
+    required this.name,
+    this.photoUrl,
+  });
+
+  factory UserCompactModel.fromJson(Map<String, dynamic> json) => _$UserCompactModelFromJson(json);
+  Map<String, dynamic> toJson() => _$UserCompactModelToJson(this);
+
+  @override
+  List<Object?> get props => [id, username, name, photoUrl];
+}
+
+// ==========================================
+// USER PROFILE MODEL
+// Matches UserProfile in FastAPI
+// ==========================================
+@JsonSerializable()
+class UserProfileModel extends Equatable {
+  @JsonKey(name: 'user')
+  final UserCompactModel user;
+
+  @JsonKey(name: 'followers_count')
+  final int followersCount;
+
+  @JsonKey(name: 'following_count')
+  final int followingCount;
+
+  @JsonKey(name: 'is_followed_by_me', defaultValue: false)
+  final bool isFollowedByMe;
+
+  const UserProfileModel({
+    required this.user,
+    required this.followersCount,
+    required this.followingCount,
+    required this.isFollowedByMe,
+  });
+
+  factory UserProfileModel.fromJson(Map<String, dynamic> json) => _$UserProfileModelFromJson(json);
+  Map<String, dynamic> toJson() => _$UserProfileModelToJson(this);
+
+  @override
+  List<Object?> get props => [
+    user,
+    followersCount,
+    followingCount,
+    isFollowedByMe,
+  ];
+}

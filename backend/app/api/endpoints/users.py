@@ -7,7 +7,7 @@ from fastapi import UploadFile, File # type: ignore
 from app.core.file_manager import save_upload_file
 
 from app import crud
-from app.schemas.user import UserCreate, UserUpdate, UserResponse
+from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserProfile
 from app.api.dependencies import get_db, get_current_user
 from app.models.models import User
 
@@ -107,23 +107,18 @@ async def search_for_users(
     return users
 
 
-@router.get("/{username}", response_model=UserResponse)
+@router.get("/{username}", response_model=UserProfile)
 async def get_user_profile(
         username: str,
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
-    """
-    Retrieves a specific user's public profile by their unique username.
-    This handles the "Stranger's Profile" view from the UI mockups.
-    """
-    user = await crud.user.get_user_by_username(db, username=username)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found."
-        )
-    return user
+    profile_data = await crud.user.get_user_profile_data(
+        db, username=username, current_user_id=current_user.id
+    )
+    if not profile_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    return profile_data
 
 
 @router.patch("/me", response_model=UserResponse)

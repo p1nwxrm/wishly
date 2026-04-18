@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:frontend/data/models/user_models.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'user_subscription_models.g.dart';
@@ -56,4 +57,28 @@ class UserSubscriptionCreateModel extends Equatable {
 
   @override
   List<Object?> get props => [subscribedUserId, subscriberId];
+}
+
+// ==========================================
+// USER CONNECTION MODEL
+// Matches UserConnectionModel in FastAPI
+// ==========================================
+@JsonSerializable()
+class UserConnectionModel extends Equatable {
+  @JsonKey(name: 'user')
+  final UserCompactModel user;
+
+  @JsonKey(name: 'is_followed_by_me', defaultValue: false)
+  final bool isFollowedByMe;
+
+  const UserConnectionModel({
+    required this.user,
+    required this.isFollowedByMe,
+  });
+
+  factory UserConnectionModel.fromJson(Map<String, dynamic> json) => _$UserConnectionModelFromJson(json);
+  Map<String, dynamic> toJson() => _$UserConnectionModelToJson(this);
+
+  @override
+  List<Object?> get props => [user, isFollowedByMe];
 }
