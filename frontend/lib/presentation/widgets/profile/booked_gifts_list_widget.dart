@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../data/models/gift_models.dart';
 import '../../blocs/booking/booking_bloc.dart';
 import '../cards/compact_gift_card.dart';
@@ -9,7 +10,6 @@ class BookedGiftsListWidget extends StatelessWidget {
   final int currentUserId;
   final Future<void> Function() onRefresh;
 
-  // Коллбэки для передачи действий на основной экран
   final void Function(SharedGiftModel sharedGift) onDetailsTap;
   final void Function(SharedGiftModel sharedGift) onUnbook;
 

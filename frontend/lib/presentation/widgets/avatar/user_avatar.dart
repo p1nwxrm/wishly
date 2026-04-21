@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/utils/url_utils.dart';
 import '../common/app_cached_network_image.dart';
 
@@ -29,15 +28,16 @@ class UserAvatar extends StatelessWidget {
     return CircleAvatar(
       radius: radius,
       backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
-      backgroundImage: hasPhoto ? CachedNetworkImageProvider(fullImageUrl) : null,
       child: hasPhoto
           ? ClipOval(
-        child: AppCachedNetworkImage(
-          imageUrl: photoUrl,
-          fallbackWidget: Icon(
-            Icons.person,
-            size: radius * 1.2,
-            color: colorScheme.primary,
+        child: SizedBox.expand(
+          child: AppCachedNetworkImage(
+            imageUrl: photoUrl,
+            fallbackWidget: Icon(
+              Icons.person,
+              size: radius * 1.2,
+              color: colorScheme.primary,
+            ),
           ),
         ),
       )

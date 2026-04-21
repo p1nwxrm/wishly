@@ -22,6 +22,7 @@ class ProfileHeaderWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final user = profile.user;
+    final isMyProfile = user.id == currentUserId;
 
     // SafeArea ensures the content doesn't overlap with the device's status bar
     return SafeArea(
@@ -31,19 +32,21 @@ class ProfileHeaderWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start, // Left-aligns the display name
           children: [
-            // 1. Top Bar: Unique Username (Centered)
-            Center(
-              child: Text(
-                user.username,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
+            // 1. Top Bar: Unique Username (Centered) - Показываем только в СВОЕМ профиле
+            if (isMyProfile) ...[
+              Center(
+                child: Text(
+                  user.username,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+            ],
 
             // 2. Avatar and Stats Row
             Row(
@@ -95,7 +98,7 @@ class ProfileHeaderWidget extends StatelessWidget {
     );
   }
 
-  // Helper method to build the statistics column
+  // Helper method to build the statistics column with InkWell animation
   Widget _buildStatColumn({
     required BuildContext context,
     required String label,
@@ -104,29 +107,35 @@ class ProfileHeaderWidget extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            count.toString(),
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: theme.colorScheme.onSurface,
-            ),
+    return Material(
+      color: Colors.transparent, // Keeps the background transparent
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8), // Rounds the ripple effect edges
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // Expands the tappable area slightly
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                count.toString(),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 13,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
-import 'package:frontend/data/models/user_models.dart';
 import 'package:json_annotation/json_annotation.dart';
+import '../models/user_models.dart';
 
 part 'gift_models.g.dart';
 

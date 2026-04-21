@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
 import 'package:talker_flutter/talker_flutter.dart';
+
 import '../../../core/api/api_error_parser.dart';
 import '../../../data/models/gift_models.dart';
 import '../../../data/repositories/booking_repository.dart';
@@ -25,7 +26,11 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       LoadMyBookings event,
       Emitter<BookingState> emit,
       ) async {
-    emit(BookingsListLoading());
+    // Only emit loading state if it's NOT a silent refresh
+    if (!event.isRefresh) {
+      emit(BookingsListLoading());
+    }
+
     try {
       final bookings = await _bookingRepository.getMyBookings();
       emit(BookingsListLoaded(bookings: bookings));
@@ -45,14 +50,10 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       Emitter<BookingState> emit,
       ) async {
     emit(BookingLoading(giftId: event.giftId));
-
     try {
       await _bookingRepository.bookGift(event.giftId);
-
       // Notify UI about the successful booking
       emit(const BookingActionSuccess(message: 'Gift successfully booked!'));
-
-      // Removed add(LoadMyBookings()) to prevent unnecessary network requests
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
@@ -69,14 +70,10 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       Emitter<BookingState> emit,
       ) async {
     emit(BookingLoading(giftId: event.giftId));
-
     try {
       await _bookingRepository.unbookGift(event.giftId);
-
       // Notify UI about the successful unbooking
       emit(const BookingActionSuccess(message: 'Booking successfully removed.'));
-
-      // Removed add(LoadMyBookings()) to prevent unnecessary network requests
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);

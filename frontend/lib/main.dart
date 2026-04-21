@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:talker_bloc_logger/talker_bloc_logger.dart';
-import '../../../core/router/app_route_observer.dart';
-import 'core/di/injection.dart';
-import 'core/router/app_router.dart';
-import 'presentation/blocs/blocs.dart';
-import 'core/theme/app_theme.dart';
+
+import '../../../core/di/injection.dart';
+import '../../../core/router/router.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../presentation/blocs/blocs.dart';
 
 void main() {
   // Catch all errors in the global zone

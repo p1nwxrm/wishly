@@ -2,8 +2,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
 import 'package:talker_flutter/talker_flutter.dart';
-import '../../../data/models/user_subscription_models.dart';
+
 import '../../../core/api/api_error_parser.dart';
+import '../../../data/models/user_subscription_models.dart';
 import '../../../data/repositories/subscription_repository.dart';
 
 part 'subscription_event.dart';
@@ -26,7 +27,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       LoadUserFollowers event,
       Emitter<SubscriptionState> emit,
       ) async {
-    emit(SubscriptionLoading());
+
+    // Only emit loading state if it's NOT a silent refresh
+    if (!event.isRefresh) {
+      emit(SubscriptionLoading());
+    }
+
     try {
       final followers = await _subscriptionRepository.getUserFollowers(event.userId);
       emit(FollowersLoaded(followers: followers));
@@ -45,7 +51,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       LoadUserFollowing event,
       Emitter<SubscriptionState> emit,
       ) async {
-    emit(SubscriptionLoading());
+
+    // Only emit loading state if it's NOT a silent refresh
+    if (!event.isRefresh) {
+      emit(SubscriptionLoading());
+    }
+
     try {
       final following = await _subscriptionRepository.getUserFollowing(event.userId);
       emit(FollowingLoaded(following: following));
@@ -66,12 +77,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       ) async {
     try {
       await _subscriptionRepository.followUser(event.targetUserId);
-
       // Notify UI about the successful action
       emit(const SubscriptionActionSuccess(message: 'Successfully followed user!'));
-
-      // Reload the current user's following list to reflect the new state
-      add(LoadUserFollowing(userId: event.currentUserId));
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
@@ -89,12 +96,8 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       ) async {
     try {
       await _subscriptionRepository.unfollowUser(event.targetUserId);
-
       // Notify UI about the successful action
       emit(const SubscriptionActionSuccess(message: 'Successfully unfollowed user.'));
-
-      // Reload the current user's following list to reflect the new state
-      add(LoadUserFollowing(userId: event.currentUserId));
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);

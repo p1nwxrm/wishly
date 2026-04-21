@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/gift_models.dart';
-import '../common/common.dart';
+import '../common/button_loading_indicator.dart';
+import '../common/app_cached_network_image.dart';
 
-class DetailedGiftCard extends StatelessWidget {
+class DetailedGiftBottomSheet extends StatelessWidget {
   final SharedGiftModel sharedGift;
   final int currentUserId;
-
   final bool isLoading;
 
-  // Optional callbacks for actions available on this card.
   final VoidCallback? onToggleVisibility;
   final VoidCallback? onDelete;
   final VoidCallback? onBookToggle;
   final VoidCallback? onOpenLink;
 
-  const DetailedGiftCard({
+  const DetailedGiftBottomSheet({
     super.key,
     required this.sharedGift,
     required this.currentUserId,
@@ -30,20 +29,31 @@ class DetailedGiftCard extends StatelessWidget {
     final theme = Theme.of(context);
     final gift = sharedGift.gift;
 
-    // --- STATE LOGIC ---
     final isOwner = sharedGift.owner.id == currentUserId;
     final isAvailable = sharedGift.bookedBy == null;
     final isBookedByMe = sharedGift.bookedBy == currentUserId;
     final isBookedByOther = !isAvailable && !isBookedByMe;
-
-    // Check if a valid link exists to dynamically adjust layout spacing
     final hasLink = gift.linkUrl != null && gift.linkUrl!.isNotEmpty;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
+    // Wrap in SingleChildScrollView for scrolling long content
+    return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min, // The window will take only the required height
         children: [
+          // Drag Handle (slider at the top)
+          Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
           // Header Image Section
           Container(
             height: 300,
@@ -51,7 +61,6 @@ class DetailedGiftCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: theme.colorScheme.primary.withValues(alpha: 0.1),
             ),
-            // Delegate image loading, caching, and fallback logic to our wrapper
             child: AppCachedNetworkImage(
               imageUrl: gift.photoUrl,
               fallbackWidget: Icon(
@@ -63,13 +72,12 @@ class DetailedGiftCard extends StatelessWidget {
           ),
 
           Padding(
-            // Dynamically adjust bottom padding: smaller if the link button is
-            // present to compensate for the button's inherent vertical space.
             padding: EdgeInsets.only(
               left: 24.0,
               right: 24.0,
               top: 24.0,
-              bottom: hasLink ? 12.0 : 24.0,
+              // SafeArea.bottom allows adding bottom padding for devices with a "home indicator" (iPhone)
+              bottom: (hasLink ? 12.0 : 24.0) + MediaQuery.paddingOf(context).bottom,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,7 +104,7 @@ class DetailedGiftCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Description section - Renders only if description is not null and not empty
+                // Description section
                 if (gift.description != null && gift.description!.isNotEmpty) ...[
                   Text(
                     'Description',
@@ -111,11 +119,9 @@ class DetailedGiftCard extends StatelessWidget {
                 ],
 
                 // Action Buttons Section
-                // Displays different controls based on whether the user is the owner or a guest
                 if (isOwner) ...[
                   IntrinsicHeight(
                     child: Row(
-                      // Stretch buttons vertically to match heights
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Expanded(
@@ -154,10 +160,9 @@ class DetailedGiftCard extends StatelessWidget {
                     ),
                   ),
                 ] else ...[
-                  // Guest Actions - Book or unbook the gift
                   SizedBox(
                     width: double.infinity,
-                    height: 56, // Taller button for details screen emphasis
+                    height: 56,
                     child: ElevatedButton(
                       onPressed: (isBookedByOther || isLoading) ? null : onBookToggle,
                       style: ElevatedButton.styleFrom(
@@ -175,7 +180,7 @@ class DetailedGiftCard extends StatelessWidget {
                   ),
                 ],
 
-                // Link Button - Renders only if linkUrl is not null and not empty
+                // Link Button
                 if (hasLink) ...[
                   const SizedBox(height: 8),
                   SizedBox(

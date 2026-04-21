@@ -15,10 +15,10 @@ class WishlistInitial extends WishlistState {}
 class WishlistLoading extends WishlistState {}
 
 // State showing a successfully loaded list of wishlists (for 'Me' or 'User')
-class WishlistsLoaded extends WishlistState {
+class WishlistsListLoaded extends WishlistState {
   final List<WishlistModel> wishlists;
 
-  const WishlistsLoaded({required this.wishlists});
+  const WishlistsListLoaded({required this.wishlists});
 
   @override
   List<Object?> get props => [wishlists];

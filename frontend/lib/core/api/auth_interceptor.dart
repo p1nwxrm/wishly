@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+
+import '../../data/models/token_models.dart';
 import '../storage/secure_storage_service.dart';
 import '../utils/app_constants.dart';
-import '../../data/models/token_models.dart';
 
 // Interceptor for injecting JWT tokens and handling 401 Unauthorized errors
 class AuthInterceptor extends Interceptor {

@@ -1,17 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/router/app_router.dart';
+
+import '../../../core/di/injection.dart';
 import '../../../data/models/user_models.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../utils/app_snackbars.dart';
-import '../../widgets/common/custom_app_bar.dart';
 import '../../widgets/avatar/avatar_picker.dart';
 import '../../widgets/common/button_loading_indicator.dart';
-import 'package:talker_flutter/talker_flutter.dart';
-import '../../../core/di/injection.dart';
 
 @RoutePage()
 class SignUpProfileScreen extends StatefulWidget {
@@ -91,8 +90,8 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Sign Up - Step 2',
+      appBar: AppBar(
+        title: const Text('Sign Up - Step 2'),
       ),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {

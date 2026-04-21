@@ -1,35 +1,38 @@
 import 'package:flutter/material.dart';
-import '../../../data/models/user_models.dart';
+import '../../../data/models/models.dart';
 import '../avatar/user_avatar.dart';
 import '../common/button_loading_indicator.dart';
 
 class UserCard extends StatelessWidget {
-  final UserModel user;
+  // Model containing user info and connection status
+  final UserConnectionModel connection;
 
-  // Indicates whether the current user is already following this person.
-  final bool isFollowing;
+  // ID of the currently logged-in user to check if this card belongs to them
+  final int currentUserId;
 
   // Disables the button and shows a loading indicator during API calls.
   final bool isLoading;
 
-  // Action triggered when the entire card is tapped (e.g., to view full profile).
-  final VoidCallback onTap;
+  // Action triggered when the entire card is tapped (e.g., to view full profile). Nullable if it's the current user.
+  final VoidCallback? onTap;
 
-  // Action triggered when the follow/unfollow button is tapped.
-  final VoidCallback onFollowToggle;
+  // Action triggered when the follow/unfollow button is tapped. Nullable if it's the current user.
+  final VoidCallback? onFollowToggle;
 
   const UserCard({
     super.key,
-    required this.user,
-    required this.isFollowing,
+    required this.connection,
+    required this.currentUserId,
     this.isLoading = false,
-    required this.onTap,
-    required this.onFollowToggle,
+    this.onTap,
+    this.onFollowToggle,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final user = connection.user;
+    final isMe = user.id == currentUserId;
 
     return Card(
       // Exactly matches the wishlist card margins
@@ -75,12 +78,22 @@ class UserCard extends StatelessWidget {
 
               const SizedBox(width: 12),
 
-              // Action Button Section (Follow / Unfollow)
+              // Action Button Section (Follow / Unfollow / You indicator)
               // Fixed width ensures the layout doesn't shift when text changes length.
               SizedBox(
                 width: 110,
                 height: 36,
-                child: isFollowing
+                child: isMe
+                    ? Center(
+                  child: Text(
+                    'You',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+                    : (connection.isFollowedByMe
                     ? ElevatedButton(
                   onPressed: isLoading ? null : onFollowToggle,
                   style: ElevatedButton.styleFrom(
@@ -100,7 +113,7 @@ class UserCard extends StatelessWidget {
                   child: isLoading
                       ? const ButtonLoadingIndicator()
                       : const Text('Follow'),
-                ),
+                )),
               ),
             ],
           ),

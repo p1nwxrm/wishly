@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:talker_flutter/talker_flutter.dart';
-
-// Import GetIt to access our global Talker instance
 import '../../../core/di/injection.dart';
 
 // Reusable custom AppBar that automatically includes a debug logger button

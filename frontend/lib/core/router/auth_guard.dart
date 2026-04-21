@@ -1,7 +1,8 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:talker_flutter/talker_flutter.dart';
+
 import '../storage/secure_storage_service.dart';
-import 'app_router.dart';
+import './app_router.dart';
 
 // Guard to protect routes that require authentication
 class AuthGuard extends AutoRouteGuard {

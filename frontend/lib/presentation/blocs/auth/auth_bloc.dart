@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
 import 'dart:io';
 import 'package:talker_flutter/talker_flutter.dart';
+
 import '../../../core/api/api_error_parser.dart';
 import '../../../data/models/user_models.dart';
 import '../../../data/repositories/auth_repository.dart';

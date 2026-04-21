@@ -99,6 +99,7 @@ async def get_followers_connections(db: AsyncSession, target_user_id: int, curre
         select(
             User.id,
             User.username,
+            User.name,
             User.photo_url,
             is_followed_sq.label("is_followed_by_me")
         )
@@ -112,7 +113,7 @@ async def get_followers_connections(db: AsyncSession, target_user_id: int, curre
 
     return [
         {
-            "user": {"id": row.id, "username": row.username, "photo_url": row.photo_url},
+            "user": {"id": row.id, "username": row.username, "name": row.name, "photo_url": row.photo_url},
             "is_followed_by_me": row.is_followed_by_me
         }
         for row in rows
@@ -138,6 +139,7 @@ async def get_following_connections(db: AsyncSession, target_user_id: int, curre
         select(
             User.id,
             User.username,
+            User.name,
             User.photo_url,
             is_followed_sq.label("is_followed_by_me")
         )
@@ -151,7 +153,7 @@ async def get_following_connections(db: AsyncSession, target_user_id: int, curre
 
     return [
         {
-            "user": {"id": row.id, "username": row.username, "photo_url": row.photo_url},
+            "user": {"id": row.id, "username": row.username, "name": row.name, "photo_url": row.photo_url},
             "is_followed_by_me": row.is_followed_by_me
         }
         for row in rows

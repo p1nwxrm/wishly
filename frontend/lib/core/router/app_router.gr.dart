@@ -28,18 +28,74 @@ class AddGiftRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [ConnectionsScreen]
-class ConnectionsRoute extends PageRouteInfo<void> {
-  const ConnectionsRoute({List<PageRouteInfo>? children})
-    : super(ConnectionsRoute.name, initialChildren: children);
+class ConnectionsRoute extends PageRouteInfo<ConnectionsRouteArgs> {
+  ConnectionsRoute({
+    Key? key,
+    required int userId,
+    required String username,
+    int initialTab = 0,
+    List<PageRouteInfo>? children,
+  }) : super(
+         ConnectionsRoute.name,
+         args: ConnectionsRouteArgs(
+           key: key,
+           userId: userId,
+           username: username,
+           initialTab: initialTab,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'ConnectionsRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const ConnectionsScreen();
+      final args = data.argsAs<ConnectionsRouteArgs>();
+      return ConnectionsScreen(
+        key: args.key,
+        userId: args.userId,
+        username: args.username,
+        initialTab: args.initialTab,
+      );
     },
   );
+}
+
+class ConnectionsRouteArgs {
+  const ConnectionsRouteArgs({
+    this.key,
+    required this.userId,
+    required this.username,
+    this.initialTab = 0,
+  });
+
+  final Key? key;
+
+  final int userId;
+
+  final String username;
+
+  final int initialTab;
+
+  @override
+  String toString() {
+    return 'ConnectionsRouteArgs{key: $key, userId: $userId, username: $username, initialTab: $initialTab}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! ConnectionsRouteArgs) return false;
+    return key == other.key &&
+        userId == other.userId &&
+        username == other.username &&
+        initialTab == other.initialTab;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ userId.hashCode ^ username.hashCode ^ initialTab.hashCode;
 }
 
 /// generated route for
@@ -54,22 +110,6 @@ class FeedRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const FeedScreen();
-    },
-  );
-}
-
-/// generated route for
-/// [GiftDetailsScreen]
-class GiftDetailsRoute extends PageRouteInfo<void> {
-  const GiftDetailsRoute({List<PageRouteInfo>? children})
-    : super(GiftDetailsRoute.name, initialChildren: children);
-
-  static const String name = 'GiftDetailsRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const GiftDetailsScreen();
     },
   );
 }
@@ -92,18 +132,55 @@ class MyProfileRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [OtherUserProfileScreen]
-class OtherUserProfileRoute extends PageRouteInfo<void> {
-  const OtherUserProfileRoute({List<PageRouteInfo>? children})
-    : super(OtherUserProfileRoute.name, initialChildren: children);
+class OtherUserProfileRoute extends PageRouteInfo<OtherUserProfileRouteArgs> {
+  OtherUserProfileRoute({
+    Key? key,
+    required String username,
+    List<PageRouteInfo>? children,
+  }) : super(
+         OtherUserProfileRoute.name,
+         args: OtherUserProfileRouteArgs(key: key, username: username),
+         rawPathParams: {'username': username},
+         initialChildren: children,
+       );
 
   static const String name = 'OtherUserProfileRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const OtherUserProfileScreen();
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<OtherUserProfileRouteArgs>(
+        orElse: () => OtherUserProfileRouteArgs(
+          username: pathParams.getString('username'),
+        ),
+      );
+      return OtherUserProfileScreen(key: args.key, username: args.username);
     },
   );
+}
+
+class OtherUserProfileRouteArgs {
+  const OtherUserProfileRouteArgs({this.key, required this.username});
+
+  final Key? key;
+
+  final String username;
+
+  @override
+  String toString() {
+    return 'OtherUserProfileRouteArgs{key: $key, username: $username}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! OtherUserProfileRouteArgs) return false;
+    return key == other.key && username == other.username;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ username.hashCode;
 }
 
 /// generated route for

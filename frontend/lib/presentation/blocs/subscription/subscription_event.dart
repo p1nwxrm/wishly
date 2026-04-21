@@ -11,8 +11,9 @@ abstract class SubscriptionEvent extends Equatable {
 // Event to load the list of users following a specific user
 class LoadUserFollowers extends SubscriptionEvent {
   final int userId;
+  final bool isRefresh;
 
-  const LoadUserFollowers({required this.userId});
+  const LoadUserFollowers({required this.userId, this.isRefresh = false});
 
   @override
   List<Object?> get props => [userId];
@@ -21,8 +22,9 @@ class LoadUserFollowers extends SubscriptionEvent {
 // Event to load the list of users a specific user is following
 class LoadUserFollowing extends SubscriptionEvent {
   final int userId;
+  final bool isRefresh;
 
-  const LoadUserFollowing({required this.userId});
+  const LoadUserFollowing({required this.userId, this.isRefresh = false});
 
   @override
   List<Object?> get props => [userId];

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/gift_models.dart';
 import '../avatar/user_avatar.dart';
-import '../common/button_loading_indicator.dart';
-import '../common/app_cached_network_image.dart';
+import '../common/common.dart';
 
 class CompactFeedGiftCard extends StatelessWidget {
   final SharedGiftModel sharedGift;

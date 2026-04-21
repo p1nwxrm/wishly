@@ -1,13 +1,14 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:talker_flutter/talker_flutter.dart';
-import '../logger/app_logger.dart';
-import '../api/api_client.dart';
-import '../storage/secure_storage_service.dart';
-import '../router/auth_guard.dart';
-import '../router/app_router.dart';
-import '../../data/repositories/repositories.dart';
+
 import '../../presentation/blocs/blocs.dart';
+import '../../data/repositories/repositories.dart';
+import '../api/api_client.dart';
+import '../logger/app_logger.dart';
+import '../storage/secure_storage_service.dart';
+import '../router/app_router.dart';
+import '../router/auth_guard.dart';
 
 // Global instance of GetIt service locator
 final getIt = GetIt.instance;
@@ -171,4 +172,7 @@ Future<void> setupDependencies() async {
       getIt<Talker>(),
     ),
   );
+
+  // Register TabRefreshCubit for navigation
+  getIt.registerLazySingleton<TabRefreshCubit>(() => TabRefreshCubit());
 }
