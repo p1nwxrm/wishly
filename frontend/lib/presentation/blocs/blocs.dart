@@ -8,4 +8,5 @@ export 'user/user_bloc.dart';
 export 'wishlist/wishlist_bloc.dart';
 export 'profile/profile_bloc.dart';
 export 'feed/feed_bloc.dart';
+export 'search/search_bloc.dart';
 export 'navigation/tab_refresh_cubit.dart';

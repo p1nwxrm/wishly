@@ -37,11 +37,12 @@ class FollowingLoaded extends SubscriptionState {
 // State indicating a successful one-time mutation (follow/unfollow)
 class SubscriptionActionSuccess extends SubscriptionState {
   final String message;
+  final int targetUserId; // Уникальный маркер
 
-  const SubscriptionActionSuccess({required this.message});
+  const SubscriptionActionSuccess({required this.message, required this.targetUserId});
 
   @override
-  List<Object?> get props => [message];
+  List<Object> get props => [message, targetUserId];
 }
 
 // State showing an error message

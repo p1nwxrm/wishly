@@ -173,6 +173,14 @@ Future<void> setupDependencies() async {
     ),
   );
 
+  // Register SearchBloc
+  getIt.registerFactory<SearchBloc>(
+        () => SearchBloc(
+      getIt<UserRepository>(),
+      getIt<Talker>(),
+    ),
+  );
+
   // Register TabRefreshCubit for navigation
   getIt.registerLazySingleton<TabRefreshCubit>(() => TabRefreshCubit());
 }

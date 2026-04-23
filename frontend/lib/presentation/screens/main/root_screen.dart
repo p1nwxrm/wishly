@@ -28,6 +28,9 @@ class RootScreen extends StatelessWidget {
             if (tabsRouter.activeIndex == index) {
               getIt<TabRefreshCubit>().refreshTab(index);
             } else {
+              if (index != 0) {
+                getIt<TabRefreshCubit>().refreshTab(index);
+              }
               tabsRouter.setActiveIndex(index);
             }
           },

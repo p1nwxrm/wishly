@@ -10,7 +10,7 @@ import '../../utils/app_snackbars.dart';
 import '../../widgets/cards/user_card.dart';
 
 @RoutePage()
-class ConnectionsScreen extends StatelessWidget {
+class ConnectionsScreen extends StatelessWidget implements AutoRouteWrapper {
   final int userId;
   final String username;
   final int initialTab;
@@ -21,6 +21,14 @@ class ConnectionsScreen extends StatelessWidget {
     required this.username,
     this.initialTab = 0,
   });
+
+  @override
+  Widget wrappedRoute(BuildContext context) {
+    return BlocProvider<SubscriptionBloc>(
+      create: (context) => getIt<SubscriptionBloc>(),
+      child: this,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,106 +76,132 @@ class ConnectionsScreen extends StatelessWidget {
   }
 }
 
-class _ConnectionsListView extends StatelessWidget {
+class _ConnectionsListView extends StatefulWidget {
   final int userId;
   final bool isFollowersTab;
 
   const _ConnectionsListView({
+    super.key,
     required this.userId,
     required this.isFollowersTab,
   });
 
   @override
+  State<_ConnectionsListView> createState() => _ConnectionsListViewState();
+}
+
+class _ConnectionsListViewState extends State<_ConnectionsListView> {
+  final Set<int> _loadingUserIds = {};
+  List<UserConnectionModel>? _cachedConnections;
+
+  @override
+  void initState() {
+    super.initState();
+    // Dispatch initial load events when the view is created
+    if (widget.isFollowersTab) {
+      context.read<SubscriptionBloc>().add(LoadUserFollowers(userId: widget.userId));
+    } else {
+      context.read<SubscriptionBloc>().add(LoadUserFollowing(userId: widget.userId));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Fetch current user ID for follow/unfollow actions and self-check
     final currentUserState = context.read<UserBloc>().state;
     final currentUserId = currentUserState is UserLoaded ? currentUserState.user.id : 0;
+    final bool isMyProfile = widget.userId == currentUserId;
 
-    return BlocProvider<SubscriptionBloc>(
-      create: (context) {
-        final bloc = getIt<SubscriptionBloc>();
-        if (isFollowersTab) {
-          bloc.add(LoadUserFollowers(userId: userId));
-        } else {
-          bloc.add(LoadUserFollowing(userId: userId));
+    return BlocConsumer<SubscriptionBloc, SubscriptionState>(
+      listener: (context, state) {
+        if (state is SubscriptionActionSuccess) {
+          setState(() {
+            _loadingUserIds.remove(state.targetUserId);
+          });
+          AppSnackbars.showSuccess(context, state.message);
+          // Refresh the current list silently after successful follow/unfollow action
+          if (widget.isFollowersTab) {
+            context.read<SubscriptionBloc>().add(LoadUserFollowers(userId: widget.userId, isRefresh: true));
+          } else {
+            context.read<SubscriptionBloc>().add(LoadUserFollowing(userId: widget.userId, isRefresh: true));
+          }
+        } else if (state is SubscriptionError) {
+          setState(() {
+            _loadingUserIds.clear();
+          });
+          AppSnackbars.showError(context, state.message);
         }
-        return bloc;
       },
-      child: BlocConsumer<SubscriptionBloc, SubscriptionState>(
-        listener: (context, state) {
-          if (state is SubscriptionActionSuccess) {
-            AppSnackbars.showSuccess(context, state.message);
-            // Refresh the current list silently after successful follow/unfollow action
-            if (isFollowersTab) {
-              context.read<SubscriptionBloc>().add(LoadUserFollowers(userId: userId, isRefresh: true));
+      builder: (context, state) {
+        // Update the cache only if real data arrived
+        if (widget.isFollowersTab && state is FollowersLoaded) {
+          _cachedConnections = state.followers;
+        } else if (!widget.isFollowersTab && state is FollowingLoaded) {
+          _cachedConnections = state.following;
+        }
+
+        // Show the main spinner ONLY if there is no data at all yet
+        if (_cachedConnections == null) {
+          if (state is SubscriptionError) {
+            return Center(child: Text(state.message));
+          }
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final connections = _cachedConnections!;
+
+        if (connections.isEmpty) {
+          return Center(
+            child: Text(
+              widget.isFollowersTab ? 'No followers yet.' : 'Not following anyone yet.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            if (widget.isFollowersTab) {
+              context.read<SubscriptionBloc>().add(LoadUserFollowers(userId: widget.userId, isRefresh: true));
             } else {
-              context.read<SubscriptionBloc>().add(LoadUserFollowing(userId: userId, isRefresh: true));
+              context.read<SubscriptionBloc>().add(LoadUserFollowing(userId: widget.userId, isRefresh: true));
             }
-          } else if (state is SubscriptionError) {
-            AppSnackbars.showError(context, state.message);
-          }
-        },
-        builder: (context, state) {
-          if (state is SubscriptionLoading || state is SubscriptionInitial) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          },
+          child: ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(), // Allows pull-to-refresh at all times
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            itemCount: connections.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final item = connections[index];
+              final isMe = item.user.id == currentUserId;
+              final isItemLoading = _loadingUserIds.contains(item.user.id);
 
-          List<UserConnectionModel> connections = [];
-          if (isFollowersTab && state is FollowersLoaded) {
-            connections = state.followers;
-          } else if (!isFollowersTab && state is FollowingLoaded) {
-            connections = state.following;
-          }
+              return UserCard(
+                connection: item,
+                currentUserId: currentUserId,
+                isLoading: isItemLoading,
+                onTap: isMe
+                    ? null
+                    : () async {
+                  await context.router.push(OtherUserProfileRoute(username: item.user.username));
 
-          if (connections.isEmpty && (state is FollowersLoaded || state is FollowingLoaded)) {
-            return Center(
-              child: Text(
-                isFollowersTab ? 'No followers yet.' : 'Not following anyone yet.',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-            );
-          }
+                  if (!context.mounted) return;
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              if (isFollowersTab) {
-                context.read<SubscriptionBloc>().add(LoadUserFollowers(userId: userId, isRefresh: true));
-              } else {
-                context.read<SubscriptionBloc>().add(LoadUserFollowing(userId: userId, isRefresh: true));
-              }
-            },
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              itemCount: connections.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final item = connections[index];
-                final isMe = item.user.id == currentUserId;
+                  if (widget.isFollowersTab) {
+                    context.read<SubscriptionBloc>().add(LoadUserFollowers(userId: widget.userId, isRefresh: true));
+                  } else {
+                    context.read<SubscriptionBloc>().add(LoadUserFollowing(userId: widget.userId, isRefresh: true));
+                  }
+                },
+                onFollowToggle: isMe
+                    ? null
+                    : () {
+                  final bloc = context.read<SubscriptionBloc>();
 
-                return UserCard(
-                  connection: item,
-                  currentUserId: currentUserId,
-                  onTap: isMe
-                      ? null
-                      : () async {
-                    await context.router.push(OtherUserProfileRoute(username: item.user.username));
+                  if (isItemLoading) return; // Prevent double clicks
 
-                    if (!context.mounted) return;
-
-                    if (isFollowersTab) {
-                      context.read<SubscriptionBloc>().add(LoadUserFollowers(userId: userId, isRefresh: true));
-                    } else {
-                      context.read<SubscriptionBloc>().add(LoadUserFollowing(userId: userId, isRefresh: true));
-                    }
-                  },
-                  onFollowToggle: isMe
-                      ? null
-                      : () {
-                    final bloc = context.read<SubscriptionBloc>();
-                    // Prevent spam clicking while already loading an action
-                    if (bloc.state is SubscriptionLoading) return;
-
-                    if (item.isFollowedByMe) {
+                  if (item.isFollowedByMe) {
+                    if (isMyProfile && !widget.isFollowersTab) {
                       showDialog(
                         context: context,
                         builder: (BuildContext dialogContext) {
@@ -182,6 +216,9 @@ class _ConnectionsListView extends StatelessWidget {
                               TextButton(
                                 onPressed: () {
                                   Navigator.of(dialogContext).pop();
+                                  setState(() {
+                                    _loadingUserIds.add(item.user.id);
+                                  });
                                   bloc.add(UnfollowUser(
                                     targetUserId: item.user.id,
                                     currentUserId: currentUserId,
@@ -197,18 +234,29 @@ class _ConnectionsListView extends StatelessWidget {
                         },
                       );
                     } else {
-                      bloc.add(FollowUser(
+                      setState(() {
+                        _loadingUserIds.add(item.user.id);
+                      });
+                      bloc.add(UnfollowUser(
                         targetUserId: item.user.id,
                         currentUserId: currentUserId,
                       ));
                     }
-                  },
-                );
-              },
-            ),
-          );
-        },
-      ),
+                  } else {
+                    setState(() {
+                      _loadingUserIds.add(item.user.id);
+                    });
+                    bloc.add(FollowUser(
+                      targetUserId: item.user.id,
+                      currentUserId: currentUserId,
+                    ));
+                  }
+                },
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

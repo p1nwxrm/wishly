@@ -14,8 +14,57 @@ import '../../widgets/profile/profile.dart';
 import '../../widgets/bottom_sheets/bottom_sheets.dart';
 
 @RoutePage()
-class MyProfileScreen extends StatelessWidget {
+class MyProfileScreen extends StatefulWidget implements AutoRouteWrapper {
   const MyProfileScreen({super.key});
+
+  @override
+  Widget wrappedRoute(BuildContext context) {
+    final userState = context.read<UserBloc>().state;
+    final username = userState is UserLoaded ? userState.user.username : '';
+
+    context.read<BookingBloc>().add(LoadMyBookings());
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ProfileBloc>(
+          create: (context) {
+            final bloc = getIt<ProfileBloc>();
+            if (username.isNotEmpty) {
+              bloc.add(LoadProfile(username: username));
+            }
+            return bloc;
+          },
+        ),
+        BlocProvider<WishlistBloc>(
+          create: (context) => getIt<WishlistBloc>()..add(const LoadMyWishlists()),
+        ),
+      ],
+      child: this,
+    );
+  }
+
+  @override
+  State<MyProfileScreen> createState() => _MyProfileScreenState();
+}
+
+class _MyProfileScreenState extends State<MyProfileScreen> with AutoRouteAwareStateMixin<MyProfileScreen> {
+
+  void _refreshData() {
+    final userState = context.read<UserBloc>().state;
+    if (userState is UserLoaded) {
+      context.read<ProfileBloc>().add(LoadProfile(username: userState.user.username));
+    }
+  }
+
+  @override
+  void didPopNext() {
+    _refreshData();
+  }
+
+  @override
+  void didChangeTabRoute(TabPageRoute previousRoute) {
+    _refreshData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,247 +80,234 @@ class MyProfileScreen extends StatelessWidget {
     final currentUser = userState.user;
     final currentUserId = currentUser.id;
 
-    // Wrap the screen in MultiBlocProvider to provide local BLoCs
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<ProfileBloc>(
-          create: (context) => getIt<ProfileBloc>()
-            ..add(LoadProfile(username: currentUser.username)),
-        ),
-        BlocProvider<WishlistBloc>(
-          create: (context) => getIt<WishlistBloc>()
-            ..add(const LoadMyWishlists()),
-        ),
-      ],
-      // BlocListener listens to global navigation events (e.g., double tap on a tab)
-      child: BlocListener<TabRefreshCubit, int?>(
-        bloc: getIt<TabRefreshCubit>(),
-        listener: (context, state) {
-          // If the tab index is 2 (our profile), forcefully refresh all screen data
-          if (state == 2) {
-            context.read<ProfileBloc>().add(LoadProfile(username: currentUser.username));
-            context.read<WishlistBloc>().add(const LoadMyWishlists(isRefresh: true));
-            context.read<BookingBloc>().add(LoadMyBookings(isRefresh: true));
-          }
-        },
-        // Controller for two tabs: "My Wishlists" and "Booked Gifts"
-        child: DefaultTabController(
-          length: 2,
-          child: Scaffold(
-            floatingActionButton: Builder(
-                builder: (ctx) {
-                  return FloatingActionButton(
-                    onPressed: () {
-                      // Show the bottom sheet to create a new wishlist
-                      showModalBottomSheet(
-                        context: ctx,
-                        isScrollControlled: true,
-                        // Pass the current WishlistBloc into the bottom sheet so it can dispatch events
-                        builder: (_) => BlocProvider.value(
-                          value: ctx.read<WishlistBloc>(),
-                          child: const AddWishlistBottomSheet(),
-                        ),
-                      );
-                    },
-                    child: const Icon(Icons.add),
-                  );
-                }
-            ),
-            // Render content based on the ProfileBloc state
-            body: BlocBuilder<ProfileBloc, ProfileState>(
-              builder: (context, state) {
-                if (state is ProfileLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+    // BlocListener listens to global navigation events (e.g., double tap on a tab)
+    return BlocListener<TabRefreshCubit, int?>(
+      bloc: getIt<TabRefreshCubit>(),
+      listener: (context, state) {
+        // If the tab index is 2 (our profile), forcefully refresh all screen data
+        if (state == 2) {
+          context.read<ProfileBloc>().add(LoadProfile(username: currentUser.username));
+          context.read<WishlistBloc>().add(const LoadMyWishlists(isRefresh: true));
+          context.read<BookingBloc>().add(LoadMyBookings(isRefresh: true));
+        }
+      },
+      // Controller for two tabs: "My Wishlists" and "Booked Gifts"
+      child: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          floatingActionButton: Builder(
+              builder: (ctx) {
+                return FloatingActionButton(
+                  onPressed: () {
+                    // Show the bottom sheet to create a new wishlist
+                    showModalBottomSheet(
+                      context: ctx,
+                      isScrollControlled: true,
+                      // Pass the current WishlistBloc into the bottom sheet so it can dispatch events
+                      builder: (_) => BlocProvider.value(
+                        value: ctx.read<WishlistBloc>(),
+                        child: const AddWishlistBottomSheet(),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.add),
+                );
+              }
+          ),
+          // Render content based on the ProfileBloc state
+          body: BlocBuilder<ProfileBloc, ProfileState>(
+            builder: (context, state) {
+              if (state is ProfileLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-                // Handle profile loading error with a retry button
-                if (state is ProfileError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
-                        const SizedBox(height: 16),
-                        Text(state.message),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            context.read<ProfileBloc>().add(LoadProfile(username: currentUser.username));
-                          },
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                // Successful load: build the profile header and tabs
-                if (state is ProfileLoaded) {
-                  final theme = Theme.of(context);
-                  final profile = state.profile;
-
-                  return Column(
+              // Handle profile loading error with a retry button
+              if (state is ProfileError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Header component (avatar, statistics)
-                      ProfileHeaderWidget(
-                        profile: profile,
-                        currentUserId: currentUserId,
-                        // Navigation to the followers list
-                        onFollowersTap: () async {
-                          await context.router.push(ConnectionsRoute(
-                              userId: currentUserId,
-                              username: profile.user.username,
-                              initialTab: 0
-                          ));
-
-                          // Refresh profile on return in case data has changed
-                          if (context.mounted) {
-                            context.read<ProfileBloc>().add(LoadProfile(username: currentUser.username));
-                          }
-                        },
-                        // Navigation to the following list
-                        onFollowingTap: () async {
-                          await context.router.push(ConnectionsRoute(
-                              userId: currentUserId,
-                              username: profile.user.username,
-                              initialTab: 1
-                          ));
-
-                          if (context.mounted) {
-                            context.read<ProfileBloc>().add(LoadProfile(username: currentUser.username));
-                          }
-                        },
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      // TODO: logic for transition to EditProfileScreen
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.secondarySurfaceColor,
-                                      foregroundColor: theme.colorScheme.onSurface,
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(vertical: 10),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'Edit profile',
-                                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      // Copy username and show a success snackbar
-                                      Clipboard.setData(ClipboardData(text: '@${currentUser.username}'));
-                                      AppSnackbars.showSuccess(context, 'Username copied to clipboard!');
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.secondarySurfaceColor,
-                                      foregroundColor: theme.colorScheme.onSurface,
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(vertical: 10),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'Share profile',
-                                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  // Dialog to confirm logging out of the account
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext dialogContext) {
-                                      return AlertDialog(
-                                        title: const Text('Log out'),
-                                        content: const Text('Are you sure you want to log out of your account?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.of(dialogContext).pop(),
-                                            child: const Text('Cancel'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.of(dialogContext).pop();
-                                              // Dispatch session expired event to AuthBloc
-                                              getIt<AuthBloc>().add(SessionExpired());
-                                            },
-                                            style: TextButton.styleFrom(
-                                              foregroundColor: theme.colorScheme.error,
-                                            ),
-                                            child: const Text('Log out'),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: theme.colorScheme.error,
-                                  foregroundColor: theme.colorScheme.onError,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Log out',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
                       const SizedBox(height: 16),
-                      // Tab bar switches
-                      TabBar(
-                        indicatorColor: theme.colorScheme.primary,
-                        labelColor: theme.colorScheme.primary,
-                        unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                        labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                        tabs: const [
-                          Tab(text: 'My Wishlists'),
-                          Tab(text: 'Booked Gifts'),
-                        ],
-                      ),
-                      // Tab contents (passing currentUserId)
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            _WishlistsTab(currentUserId: currentUserId),
-                            _BookedGiftsTab(currentUserId: currentUserId),
-                          ],
-                        ),
+                      Text(state.message),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          context.read<ProfileBloc>().add(LoadProfile(username: currentUser.username));
+                        },
+                        child: const Text('Retry'),
                       ),
                     ],
-                  );
-                }
+                  ),
+                );
+              }
 
-                return const SizedBox.shrink();
-              },
-            ),
+              // Successful load: build the profile header and tabs
+              if (state is ProfileLoaded) {
+                final theme = Theme.of(context);
+                final profile = state.profile;
+
+                return Column(
+                  children: [
+                    // Header component (avatar, statistics)
+                    ProfileHeaderWidget(
+                      profile: profile,
+                      currentUserId: currentUserId,
+                      // Navigation to the followers list
+                      onFollowersTap: () async {
+                        await context.router.push(ConnectionsRoute(
+                            userId: currentUserId,
+                            username: profile.user.username,
+                            initialTab: 0
+                        ));
+
+                        // Refresh profile on return in case data has changed
+                        if (context.mounted) {
+                          context.read<ProfileBloc>().add(LoadProfile(username: currentUser.username));
+                        }
+                      },
+                      // Navigation to the following list
+                      onFollowingTap: () async {
+                        await context.router.push(ConnectionsRoute(
+                            userId: currentUserId,
+                            username: profile.user.username,
+                            initialTab: 1
+                        ));
+
+                        if (context.mounted) {
+                          context.read<ProfileBloc>().add(LoadProfile(username: currentUser.username));
+                        }
+                      },
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    // TODO: logic for transition to EditProfileScreen
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.secondarySurfaceColor,
+                                    foregroundColor: theme.colorScheme.onSurface,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Edit profile',
+                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    // Copy username and show a success snackbar
+                                    Clipboard.setData(ClipboardData(text: '@${currentUser.username}'));
+                                    AppSnackbars.showSuccess(context, 'Username copied to clipboard!');
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.secondarySurfaceColor,
+                                    foregroundColor: theme.colorScheme.onSurface,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Share profile',
+                                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Dialog to confirm logging out of the account
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext dialogContext) {
+                                    return AlertDialog(
+                                      title: const Text('Log out'),
+                                      content: const Text('Are you sure you want to log out of your account?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(dialogContext).pop(),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(dialogContext).pop();
+                                            // Dispatch session expired event to AuthBloc
+                                            getIt<AuthBloc>().add(SessionExpired());
+                                          },
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: theme.colorScheme.error,
+                                          ),
+                                          child: const Text('Log out'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.colorScheme.error,
+                                foregroundColor: theme.colorScheme.onError,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'Log out',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Tab bar switches
+                    TabBar(
+                      indicatorColor: theme.colorScheme.primary,
+                      labelColor: theme.colorScheme.primary,
+                      unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                      labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                      tabs: const [
+                        Tab(text: 'My Wishlists'),
+                        Tab(text: 'Booked Gifts'),
+                      ],
+                    ),
+                    // Tab contents (passing currentUserId)
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _WishlistsTab(currentUserId: currentUserId),
+                          _BookedGiftsTab(currentUserId: currentUserId),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return const SizedBox.shrink();
+            },
           ),
         ),
       ),
@@ -281,7 +317,6 @@ class MyProfileScreen extends StatelessWidget {
 
 // ============================================================================
 // StatelessWidget for the My Wishlist Tab
-// Tab containing the user's wishlists.
 // ============================================================================
 class _WishlistsTab extends StatelessWidget {
   final int currentUserId;
@@ -290,10 +325,8 @@ class _WishlistsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // BlocConsumer: listens for effects (snackbars) and builds UI based on WishlistBloc state
     return BlocConsumer<WishlistBloc, WishlistState>(
       listener: (context, state) {
-        // On successful action (delete/edit), show success message and refresh the list
         if (state is WishlistActionSuccess) {
           AppSnackbars.showSuccess(context, state.message);
           context.read<WishlistBloc>().add(const LoadMyWishlists(isRefresh: true));
@@ -301,7 +334,6 @@ class _WishlistsTab extends StatelessWidget {
           AppSnackbars.showError(context, state.message);
         }
       },
-      // Optimization: rebuild the widget only on these specific states
       buildWhen: (previous, current) =>
       current is WishlistLoading ||
           current is WishlistsListLoaded ||
@@ -315,21 +347,18 @@ class _WishlistsTab extends StatelessWidget {
           return WishlistsListWidget(
             wishlists: state.wishlists,
             currentUserId: currentUserId,
-            // Pull-to-refresh support
             onRefresh: () async {
               context.read<WishlistBloc>().add(const LoadMyWishlists(isRefresh: true));
             },
             onWishlistTap: (wishlist) {
               // TODO: context.router.push(WishlistDetailsRoute(wishlistId: wishlist.id));
             },
-            // Toggle visibility (privacy) of the wishlist
             onToggleVisibility: (wishlist) {
               final updatedModel = WishlistUpdateModel(isVisible: !wishlist.isVisible);
               context.read<WishlistBloc>().add(
                   UpdateWishlist(wishlistId: wishlist.id, updateModel: updatedModel)
               );
             },
-            // Handle wishlist deletion with confirmation
             onDelete: (wishlist) {
               showDialog(
                 context: context,
@@ -378,27 +407,17 @@ class _WishlistsTab extends StatelessWidget {
 
 // ============================================================================
 // Stateful Widget for the Booked Gifts Tab
-// Tab with booked gifts. StatefulWidget is needed to call initState.
 // ============================================================================
-class _BookedGiftsTab extends StatefulWidget {
+// ============================================================================
+// StatelessWidget for the Booked Gifts Tab
+// ============================================================================
+class _BookedGiftsTab extends StatelessWidget {
   final int currentUserId;
 
   const _BookedGiftsTab({required this.currentUserId});
 
   @override
-  State<_BookedGiftsTab> createState() => _BookedGiftsTabState();
-}
-
-class _BookedGiftsTabState extends State<_BookedGiftsTab> {
-  @override
-  void initState() {
-    super.initState();
-    context.read<BookingBloc>().add(LoadMyBookings());
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // Also using BlocConsumer to show success/error snackbars (e.g., on unbooking)
     return BlocConsumer<BookingBloc, BookingState>(
       listener: (context, state) {
         if (state is BookingActionSuccess) {
@@ -420,11 +439,10 @@ class _BookedGiftsTabState extends State<_BookedGiftsTab> {
         if (state is BookingsListLoaded) {
           return BookedGiftsListWidget(
             bookedGifts: state.bookings,
-            currentUserId: widget.currentUserId,
+            currentUserId: currentUserId,
             onRefresh: () async {
               context.read<BookingBloc>().add(LoadMyBookings(isRefresh: true));
             },
-            // Open bottom sheet with detailed gift information
             onDetailsTap: (sharedGift) {
               showModalBottomSheet(
                 context: context,
@@ -439,7 +457,7 @@ class _BookedGiftsTabState extends State<_BookedGiftsTab> {
                     value: context.read<BookingBloc>(),
                     child: DetailedGiftBottomSheet(
                       sharedGift: sharedGift,
-                      currentUserId: widget.currentUserId,
+                      currentUserId: currentUserId,
                       onBookToggle: () {
                         showDialog(
                           context: ctx,
@@ -468,7 +486,6 @@ class _BookedGiftsTabState extends State<_BookedGiftsTab> {
                           },
                         );
                       },
-                      // Open product link in external browser/app
                       onOpenLink: () async {
                         final link = sharedGift.gift.linkUrl;
                         if (link != null && link.isNotEmpty) {
@@ -487,7 +504,6 @@ class _BookedGiftsTabState extends State<_BookedGiftsTab> {
                 },
               );
             },
-            // Quick unbook directly from the list
             onUnbook: (sharedGift) {
               showDialog(
                 context: context,

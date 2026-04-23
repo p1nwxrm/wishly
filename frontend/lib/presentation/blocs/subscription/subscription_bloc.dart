@@ -75,10 +75,13 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       FollowUser event,
       Emitter<SubscriptionState> emit,
       ) async {
+
+    emit(SubscriptionLoading());
+
     try {
       await _subscriptionRepository.followUser(event.targetUserId);
       // Notify UI about the successful action
-      emit(const SubscriptionActionSuccess(message: 'Successfully followed user!'));
+      emit(SubscriptionActionSuccess(targetUserId: event.targetUserId, message: 'Successfully followed user!'));
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
@@ -94,10 +97,13 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       UnfollowUser event,
       Emitter<SubscriptionState> emit,
       ) async {
+
+    emit(SubscriptionLoading());
+
     try {
       await _subscriptionRepository.unfollowUser(event.targetUserId);
       // Notify UI about the successful action
-      emit(const SubscriptionActionSuccess(message: 'Successfully unfollowed user.'));
+      emit(SubscriptionActionSuccess(targetUserId: event.targetUserId, message: 'Successfully unfollowed user.'));
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);

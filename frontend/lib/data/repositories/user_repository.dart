@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../models/user_models.dart';
+import '../models/user_subscription_models.dart';
 
 // Repository for handling user profile data
 class UserRepository {
@@ -47,6 +48,26 @@ class UserRepository {
         data: updateModel.toJson(),
       );
       return UserModel.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Search for users by partial username or display name
+  Future<List<UserConnectionModel>> searchUsers(String query, {int limit = 20}) async {
+    try {
+      final response = await _dio.get(
+        '/users/search',
+        queryParameters: {
+          'q': query,
+          'limit': limit,
+        },
+      );
+
+      // Convert the list of JSON objects into a list of UserModel instances
+      return (response.data as List)
+          .map((json) => UserConnectionModel.fromJson(json))
+          .toList();
     } catch (e) {
       rethrow;
     }

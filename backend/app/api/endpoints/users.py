@@ -8,6 +8,7 @@ from app.core.file_manager import save_upload_file
 
 from app import crud
 from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserProfile
+from app.schemas.user_subscription import UserConnection
 from app.api.dependencies import get_db, get_current_user
 from app.models.models import User
 
@@ -86,7 +87,7 @@ async def get_my_profile(
     return current_user
 
 
-@router.get("/search", response_model=List[UserResponse])
+@router.get("/search", response_model=List[UserConnection])
 async def search_for_users(
         q: str,
         limit: int = 20,
@@ -103,7 +104,13 @@ async def search_for_users(
             detail="Search query must be at least 2 characters long."
         )
 
-    users = await crud.user.search_users(db, search_query=q, limit=limit)
+    users = await crud.user.search_users(
+	    db=db,
+	    search_query=q,
+	    current_user_id=current_user.id,
+	    limit=limit
+    )
+
     return users
 
 

@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, func, and_, or_
+from sqlalchemy import select, delete, func, and_, or_, exists
 
 from app.models.models import User, UserSubscription, SubscriptionType
 from app.schemas.user import UserCreate, UserUpdate
@@ -133,18 +133,29 @@ async def get_user_profile_data(db: AsyncSession, username: str, current_user_id
     }
 
 
-async def search_users(db: AsyncSession, search_query: str, limit: int = 20) -> list[User]:
+async def search_users(
+        db: AsyncSession,
+        search_query: str,
+        current_user_id: int,
+        limit: int = 20
+) -> list[dict]:
     """
     Searches for users using a partial match on either their unique username
     or their display name. Uses ILIKE for case-insensitive matching.
+    Includes a boolean indicating if the current user follows them.
     Limits the result to prevent massive database payloads.
     """
-    # Create a wildcard search term. If search_query is "al", search_term becomes "%al%"
     search_term = f"%{search_query}%"
 
-    # noinspection PyUnresolvedReferences
+    is_followed_subquery = exists().where(
+        and_(
+            UserSubscription.subscriber_id == current_user_id,
+            UserSubscription.subscribed_user_id == User.id
+        )
+    ).label("is_followed_by_me")
+
     stmt = (
-        select(User)
+        select(User, is_followed_subquery)
         .where(
             or_(
                 User.username.ilike(search_term),
@@ -156,8 +167,14 @@ async def search_users(db: AsyncSession, search_query: str, limit: int = 20) -> 
 
     result = await db.execute(stmt)
 
-    # scalars().all() extracts the User objects from the Result object and returns them as a list
-    return list(result.scalars().all())
+    connections = []
+    for user_obj, is_followed in result.all():
+        connections.append({
+            "user": user_obj,
+            "is_followed_by_me": is_followed
+        })
+
+    return connections
 
 
 async def update_user(db: AsyncSession, db_user: User, user_in: UserUpdate) -> User:
