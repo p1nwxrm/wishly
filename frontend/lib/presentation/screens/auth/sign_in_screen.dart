@@ -31,7 +31,11 @@ class _SignInScreenState extends State<SignInScreen> {
     super.dispose();
   }
 
-  // Handle the login button press
+  // --------------------------------------------------------------------------
+  // Actions & Callbacks
+  // --------------------------------------------------------------------------
+
+  /// Handles the login button press
   void _onLoginPressed() {
     // Validate all fields before sending the request
     if (_formKey.currentState?.validate() ?? false) {
@@ -45,11 +49,47 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
+  /// Handles navigation to the Sign Up flow
+  void _onSignUpPressed() {
+    context.router.push(const SignUpCredentialsRoute());
+  }
+
+  // --------------------------------------------------------------------------
+  // Validators
+  // --------------------------------------------------------------------------
+
+  /// Validates the email input format
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your email';
+    }
+
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Please enter a valid email format';
+    }
+
+    return null; // Null means the input is valid
+  }
+
+  /// Validates the password input format
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your password';
+    }
+
+    return null; // Null means the input is valid
+  }
+
+  // --------------------------------------------------------------------------
+  // Build Method
+  // --------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Sign In',
+      appBar: AppBar(
+        title: const Text('Sign In'),
       ),
       // BlocConsumer handles both UI rebuilding and side effects like navigation
       body: BlocConsumer<AuthBloc, AuthState>(
@@ -89,16 +129,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           labelText: 'Email',
                           hintText: 'Enter your email',
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your email';
-                          }
-                          final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-                          if (!emailRegex.hasMatch(value.trim())) {
-                            return 'Please enter a valid email format';
-                          }
-                          return null;
-                        },
+                        validator: _validateEmail,
                       ),
                       const SizedBox(height: 16),
 
@@ -111,12 +142,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           labelText: 'Password',
                           hintText: 'Enter your password',
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
-                          }
-                          return null;
-                        },
+                        validator: _validatePassword,
                       ),
                       const SizedBox(height: 32),
 
@@ -133,12 +159,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       // Navigation to Sign Up screen
                       TextButton(
                         // Disable button if currently loading
-                        onPressed: isLoading
-                            ? null
-                            : () {
-                          // Navigate to the first step of the Sign Up flow
-                          context.router.push(const SignUpCredentialsRoute());
-                        },
+                        onPressed: isLoading ? null : _onSignUpPressed,
                         child: const Text('Don\'t have an account? Sign Up'),
                       ),
                     ],

@@ -41,19 +41,6 @@ async def get_gift(db: AsyncSession, gift_id: int) -> Gift | None:
 	return result.scalar_one_or_none()
 
 
-async def get_gifts_by_wishlist(db: AsyncSession, wishlist_id: int) -> Sequence[Gift]:
-	"""
-	Retrieves all gifts associated with a specific wishlist.
-	Useful for displaying the contents of a wishlist on the frontend.
-	"""
-	# We filter gifts based on the foreign key (wishlist_id)
-	stmt = select(Gift).where(Gift.wishlist_id == wishlist_id)
-	result = await db.execute(stmt)
-
-	# scalars().all() extracts the Gift objects from the result rows and returns them as a list
-	return result.scalars().all()
-
-
 async def update_gift(db: AsyncSession, db_gift: Gift, gift_in: GiftUpdate) -> Gift:
 	"""
 	Updates an existing gift.

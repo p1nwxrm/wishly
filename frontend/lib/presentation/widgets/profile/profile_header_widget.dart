@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/user_models.dart';
-import '../avatar/user_avatar.dart';
+import '../photo/user_avatar.dart';
 
 class ProfileHeaderWidget extends StatelessWidget {
   final UserProfileModel profile;
@@ -28,11 +28,11 @@ class ProfileHeaderWidget extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start, // Left-aligns the display name
           children: [
-            // 1. Top Bar: Unique Username (Centered) - Показываем только в СВОЕМ профиле
+            // 1. Top Bar: Unique Username (Centered) - Shown only in the current user's profile
             if (isMyProfile) ...[
               Center(
                 child: Text(
@@ -63,14 +63,12 @@ class ProfileHeaderWidget extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildStatColumn(
-                        context: context,
+                      ProfileStatColumn(
                         label: 'Followers',
                         count: profile.followersCount,
                         onTap: onFollowersTap,
                       ),
-                      _buildStatColumn(
-                        context: context,
+                      ProfileStatColumn(
                         label: 'Following',
                         count: profile.followingCount,
                         onTap: onFollowingTap,
@@ -97,14 +95,23 @@ class ProfileHeaderWidget extends StatelessWidget {
       ),
     );
   }
+}
 
-  // Helper method to build the statistics column with InkWell animation
-  Widget _buildStatColumn({
-    required BuildContext context,
-    required String label,
-    required int count,
-    required VoidCallback onTap,
-  }) {
+/// Extracted as a StatelessWidget for better performance and widget tree optimization.
+class ProfileStatColumn extends StatelessWidget {
+  final String label;
+  final int count;
+  final VoidCallback onTap;
+
+  const ProfileStatColumn({
+    super.key,
+    required this.label,
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Material(
@@ -113,7 +120,8 @@ class ProfileHeaderWidget extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8), // Rounds the ripple effect edges
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // Expands the tappable area slightly
+          // Expands the tappable area slightly for better accessibility and UX
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

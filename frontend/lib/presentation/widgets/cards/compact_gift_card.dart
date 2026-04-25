@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/gift_models.dart';
-import '../avatar/user_avatar.dart';
+import '../photo/user_avatar.dart';
 import '../common/common.dart';
 
 class CompactFeedGiftCard extends StatelessWidget {

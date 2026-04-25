@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/models.dart';
-import '../avatar/user_avatar.dart';
+import '../photo/user_avatar.dart';
 import '../common/button_loading_indicator.dart';
 
 class UserCard extends StatelessWidget {

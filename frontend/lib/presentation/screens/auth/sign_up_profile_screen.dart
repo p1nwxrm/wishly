@@ -1,15 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:talker_flutter/talker_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 
-import '../../../core/di/injection.dart';
 import '../../../data/models/user_models.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../utils/app_snackbars.dart';
-import '../../widgets/avatar/avatar_picker.dart';
+import '../../utils/image_picker_helper.dart';
+import '../../widgets/photo/avatar_picker.dart';
 import '../../widgets/common/button_loading_indicator.dart';
 
 @RoutePage()
@@ -34,9 +32,7 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
   final _nameController = TextEditingController();
 
   // Variable to store the selected profile photo
-  File? _selectedImage;
-  // Instance of ImagePicker to access device gallery
-  final ImagePicker _picker = ImagePicker();
+  File? _selectedPhoto;
 
   @override
   void dispose() {
@@ -45,28 +41,21 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 80, // Compress image slightly for better performance
-      );
+  // --------------------------------------------------------------------------
+  // Actions & Callbacks
+  // --------------------------------------------------------------------------
 
-      if (image != null) {
-        setState(() {
-          _selectedImage = File(image.path);
-        });
-      }
-    } catch (e, st) {
-      getIt<Talker>().handle(e, st, 'Error picking image from gallery');
-
-      if (mounted) {
-        AppSnackbars.showError(context, 'Failed to pick image');
-      }
+  /// Handles picking a profile photo from the device gallery
+  Future<void> _pickPhoto() async {
+    final file = await ImagePickerHelper.pickImageFromGallery(context);
+    if (file != null) {
+      setState(() {
+        _selectedPhoto = file;
+      });
     }
   }
 
-  // Handle the final registration step
+  /// Handles the final registration step
   void _onCompleteRegistration() {
     if (_formKey.currentState?.validate() ?? false) {
       // Create the user model using data from both Step 1 and Step 2
@@ -81,11 +70,39 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
       context.read<AuthBloc>().add(
         RegisterRequested(
           userModel: userModel,
-          photoFile: _selectedImage, // Pass the selected file if any
+          photoFile: _selectedPhoto, // Pass the selected file if any
         ),
       );
     }
   }
+
+  // --------------------------------------------------------------------------
+  // Validators
+  // --------------------------------------------------------------------------
+
+  /// Validates the username input
+  String? _validateUsername(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a username';
+    }
+    final validCharacters = RegExp(r'^[a-zA-Z0-9_]+$');
+    if (!validCharacters.hasMatch(value)) {
+      return 'Use only Latin letters, numbers, and _';
+    }
+    return null;
+  }
+
+  /// Validates the display name input
+  String? _validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your name';
+    }
+    return null;
+  }
+
+  // --------------------------------------------------------------------------
+  // Build Method
+  // --------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -122,10 +139,10 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
                       // Avatar Picker Widget
                       Center(
                         child: AvatarPicker(
-                          localImage: _selectedImage,
+                          localImage: _selectedPhoto,
                           imageUrl: null,
                           isLoading: isLoading,
-                          onTap: _pickImage,
+                          onTap: _pickPhoto,
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -142,16 +159,7 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
                           // Helper text guides the user
                           helperText: 'Only Latin letters, numbers, and underscores',
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a username';
-                          }
-                          final validCharacters = RegExp(r'^[a-zA-Z0-9_]+$');
-                          if (!validCharacters.hasMatch(value)) {
-                            return 'Use only Latin letters, numbers, and _';
-                          }
-                          return null;
-                        },
+                        validator: _validateUsername,
                       ),
                       const SizedBox(height: 16),
 
@@ -164,12 +172,7 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
                           labelText: 'Full Name',
                           hintText: 'Enter your name',
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your name';
-                          }
-                          return null;
-                        },
+                        validator: _validateName,
                       ),
                       const SizedBox(height: 32),
 

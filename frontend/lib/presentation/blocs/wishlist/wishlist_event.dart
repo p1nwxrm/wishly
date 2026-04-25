@@ -30,11 +30,15 @@ class LoadUserWishlists extends WishlistEvent {
 // Event to fetch a specific wishlist and its gifts
 class LoadWishlistDetails extends WishlistEvent {
   final int wishlistId;
+  final bool isRefresh;
 
-  const LoadWishlistDetails({required this.wishlistId});
+  const LoadWishlistDetails({
+    required this.wishlistId,
+    this.isRefresh = false,
+  });
 
   @override
-  List<Object?> get props => [wishlistId];
+  List<Object?> get props => [wishlistId, isRefresh];
 }
 
 // Event to create a new wishlist

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
-
 import '../../../core/router/app_router.dart';
-import '../../widgets/common/custom_app_bar.dart';
 
 @RoutePage()
 class SignUpCredentialsScreen extends StatefulWidget {
@@ -30,24 +28,85 @@ class _SignUpCredentialsScreenState extends State<SignUpCredentialsScreen> {
     super.dispose();
   }
 
-  // Handle the Next button press
+  // --------------------------------------------------------------------------
+  // Actions & Navigation
+  // --------------------------------------------------------------------------
+
+  /// Handles the Next button press
   void _onNextPressed() {
     // Validate all fields (including password match)
     if (_formKey.currentState?.validate() ?? false) {
-      context.router.push(
-        SignUpProfileRoute(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        ),
-      );
+      _navigateToNextStep();
     }
   }
+
+  /// Handles navigation to the next step of the sign-up flow
+  void _navigateToNextStep() {
+    context.router.push(
+      SignUpProfileRoute(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      ),
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // Validators
+  // --------------------------------------------------------------------------
+
+  /// Validates the email input format
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your email';
+    }
+
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Please enter a valid email format';
+    }
+
+    return null;
+  }
+
+  /// Validates the password strength and allowed characters
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password';
+    }
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+
+    // \x21-\x7E covers all visible characters of the English keyboard without spaces
+    final passwordRegex = RegExp(r'^[\x21-\x7E]+$');
+    if (!passwordRegex.hasMatch(value)) {
+      return 'Use only Latin letters, numbers, and special characters';
+    }
+
+    return null;
+  }
+
+  /// Validates if the confirmation password matches the original password
+  String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please confirm your password';
+    }
+    if (value != _passwordController.text) {
+      return 'Passwords do not match';
+    }
+
+    return null;
+  }
+
+  // --------------------------------------------------------------------------
+  // Build Method
+  // --------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Sign Up - Step 1',
+      appBar: AppBar(
+        title: const Text('Sign Up - Step 1'),
       ),
       body: SafeArea(
         child: Center(
@@ -74,16 +133,7 @@ class _SignUpCredentialsScreenState extends State<SignUpCredentialsScreen> {
                       labelText: 'Email',
                       hintText: 'Enter your email',
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-                      if (!emailRegex.hasMatch(value.trim())) {
-                        return 'Please enter a valid email format';
-                      }
-                      return null;
-                    },
+                    validator: _validateEmail,
                   ),
                   const SizedBox(height: 16),
 
@@ -95,21 +145,7 @@ class _SignUpCredentialsScreenState extends State<SignUpCredentialsScreen> {
                       labelText: 'Password',
                       hintText: 'Create a password',
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a password';
-                      }
-                      if (value.length < 8) {
-                        return 'Password must be at least 8 characters';
-                      }
-                      // \x21-\x7E covers all visible characters of the English keyboard without spaces
-                      final passwordRegex = RegExp(r'^[\x21-\x7E]+$');
-                      if (!passwordRegex.hasMatch(value)) {
-                        return 'Use only Latin letters, numbers, and special characters';
-                      }
-
-                      return null;
-                    },
+                    validator: _validatePassword,
                   ),
                   const SizedBox(height: 16),
 
@@ -121,15 +157,7 @@ class _SignUpCredentialsScreenState extends State<SignUpCredentialsScreen> {
                       labelText: 'Confirm Password',
                       hintText: 'Repeat your password',
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please confirm your password';
-                      }
-                      if (value != _passwordController.text) {
-                        return 'Passwords do not match';
-                      }
-                      return null;
-                    },
+                    validator: _validateConfirmPassword,
                   ),
                   const SizedBox(height: 32),
 

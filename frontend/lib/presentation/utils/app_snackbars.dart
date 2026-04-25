@@ -8,7 +8,7 @@ class AppSnackbars {
 
     ScaffoldMessenger.of(context)
     // Removes the current snackbar instantly if the user spams the button
-      ..hideCurrentSnackBar()
+      ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
           backgroundColor: colorScheme.error,

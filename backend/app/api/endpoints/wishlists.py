@@ -96,42 +96,66 @@ async def read_user_wishlists(
     return visible_wishlists
 
 
-@router.get("/{wishlist_id}/gifts", response_model=List[schemas.gift.GiftResponse])
+@router.get("/{wishlist_id}/gifts", response_model=List[schemas.gift.SharedGift])
 async def read_wishlist_gifts(
-    wishlist_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+        wishlist_id: int,
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user)
 ):
     """
     Retrieves all gifts for a specific wishlist.
     Applies strict privacy rules based on ownership, visibility, and subscriptions.
+    Returns a list of SharedGift objects containing extended data.
     """
     # 1. Fetch the wishlist
     wishlist = await crud.wishlist.get_wishlist(db=db, wishlist_id=wishlist_id)
     if not wishlist:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wishlist not found")
 
-    # 2. Check ownership
+    # 2. Check ownership and visibility
     is_owner = (wishlist.owner_id == current_user.id)
+    if not is_owner and not wishlist.is_visible:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wishlist not found")
 
-    # 3. Enforce access rules for non-owners
+    # 3. Fetch the owner of the wishlist via CRUD
+    owner_model = await crud.user.get_user_by_id(db=db, user_id=wishlist.owner_id)
+
+    if not owner_model:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Owner not found")
+
+    owner_compact = schemas.user.UserCompact.model_validate(owner_model)
+
+    # 4. Check mutual subscription via CRUD
+    is_mutual = False
     if not is_owner:
-        # Hide the wishlist if it is set to private
-        if not wishlist.is_visible:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wishlist not found")
+        is_mutual = await crud.subscription.check_mutual_subscription(
+            db=db,
+            user_id_1=current_user.id,
+            user_id_2=wishlist.owner_id
+        )
 
-    # 4. Fetch all gifts from the database
-    all_gifts = await crud.gift.get_gifts_by_wishlist(db=db, wishlist_id=wishlist_id)
+    # 5. Fetch gifts via CRUD (booking_info is loaded automatically under the hood)
+    all_gifts = await crud.wishlist.get_gifts_by_wishlist(db=db, wishlist_id=wishlist_id)
 
-    # 5. Filter the gifts if the user is not the owner
-    if is_owner:
-        # The owner sees absolutely everything
-        return all_gifts
-    else:
-        # Followers only see gifts where is_visible == True
-        # Using a list comprehension for fast filtering
-        visible_gifts = [gift for gift in all_gifts if gift.is_visible]
-        return visible_gifts
+    # 6. Filter visible gifts
+    visible_gifts = all_gifts if is_owner else [gift for gift in all_gifts if gift.is_visible]
+
+    # 7. Construct SharedGift response
+    shared_gifts = []
+    for gift in visible_gifts:
+        # Extract user_id if the gift is currently booked
+        booked_by_id = gift.booking_info.user_id if gift.booking_info else None
+
+        shared_gifts.append(
+            schemas.gift.SharedGift(
+                gift=schemas.gift.GiftResponse.model_validate(gift),
+                owner=owner_compact,
+                booked_by=booked_by_id,
+                is_mutual_subscription=is_mutual
+            )
+        )
+
+    return shared_gifts
 
 
 @router.patch("/{wishlist_id}", response_model=schemas.wishlist.WishlistResponse)

@@ -11,22 +11,6 @@
 part of 'app_router.dart';
 
 /// generated route for
-/// [AddGiftScreen]
-class AddGiftRoute extends PageRouteInfo<void> {
-  const AddGiftRoute({List<PageRouteInfo>? children})
-    : super(AddGiftRoute.name, initialChildren: children);
-
-  static const String name = 'AddGiftRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const AddGiftScreen();
-    },
-  );
-}
-
-/// generated route for
 /// [ConnectionsScreen]
 class ConnectionsRoute extends PageRouteInfo<ConnectionsRouteArgs> {
   ConnectionsRoute({
@@ -52,11 +36,13 @@ class ConnectionsRoute extends PageRouteInfo<ConnectionsRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<ConnectionsRouteArgs>();
-      return ConnectionsScreen(
-        key: args.key,
-        userId: args.userId,
-        username: args.username,
-        initialTab: args.initialTab,
+      return WrappedRoute(
+        child: ConnectionsScreen(
+          key: args.key,
+          userId: args.userId,
+          username: args.username,
+          initialTab: args.initialTab,
+        ),
       );
     },
   );
@@ -125,7 +111,7 @@ class MyProfileRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const MyProfileScreen();
+      return WrappedRoute(child: const MyProfileScreen());
     },
   );
 }
@@ -155,7 +141,9 @@ class OtherUserProfileRoute extends PageRouteInfo<OtherUserProfileRouteArgs> {
           username: pathParams.getString('username'),
         ),
       );
-      return OtherUserProfileScreen(key: args.key, username: args.username);
+      return WrappedRoute(
+        child: OtherUserProfileScreen(key: args.key, username: args.username),
+      );
     },
   );
 }
@@ -210,7 +198,7 @@ class SearchRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const SearchScreen();
+      return WrappedRoute(child: const SearchScreen());
     },
   );
 }
@@ -345,16 +333,57 @@ class WelcomeRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [WishlistDetailsScreen]
-class WishlistDetailsRoute extends PageRouteInfo<void> {
-  const WishlistDetailsRoute({List<PageRouteInfo>? children})
-    : super(WishlistDetailsRoute.name, initialChildren: children);
+class WishlistDetailsRoute extends PageRouteInfo<WishlistDetailsRouteArgs> {
+  WishlistDetailsRoute({
+    Key? key,
+    required int wishlistId,
+    List<PageRouteInfo>? children,
+  }) : super(
+         WishlistDetailsRoute.name,
+         args: WishlistDetailsRouteArgs(key: key, wishlistId: wishlistId),
+         rawPathParams: {'id': wishlistId},
+         initialChildren: children,
+       );
 
   static const String name = 'WishlistDetailsRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const WishlistDetailsScreen();
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<WishlistDetailsRouteArgs>(
+        orElse: () =>
+            WishlistDetailsRouteArgs(wishlistId: pathParams.getInt('id')),
+      );
+      return WrappedRoute(
+        child: WishlistDetailsScreen(
+          key: args.key,
+          wishlistId: args.wishlistId,
+        ),
+      );
     },
   );
+}
+
+class WishlistDetailsRouteArgs {
+  const WishlistDetailsRouteArgs({this.key, required this.wishlistId});
+
+  final Key? key;
+
+  final int wishlistId;
+
+  @override
+  String toString() {
+    return 'WishlistDetailsRouteArgs{key: $key, wishlistId: $wishlistId}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! WishlistDetailsRouteArgs) return false;
+    return key == other.key && wishlistId == other.wishlistId;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ wishlistId.hashCode;
 }

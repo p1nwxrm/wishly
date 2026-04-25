@@ -158,3 +158,22 @@ async def get_following_connections(db: AsyncSession, target_user_id: int, curre
         }
         for row in rows
     ]
+
+
+async def check_mutual_subscription(db: AsyncSession, user_id_1: int, user_id_2: int) -> bool:
+    """
+    Checks if two users are mutually subscribed to each other.
+    """
+    sub1_stmt = select(UserSubscription).where(
+        UserSubscription.subscriber_id == user_id_1,
+        UserSubscription.subscribed_user_id == user_id_2
+    )
+    sub2_stmt = select(UserSubscription).where(
+        UserSubscription.subscriber_id == user_id_2,
+        UserSubscription.subscribed_user_id == user_id_1
+    )
+
+    sub1 = await db.execute(sub1_stmt)
+    sub2 = await db.execute(sub2_stmt)
+
+    return (sub1.scalar_one_or_none() is not None) and (sub2.scalar_one_or_none() is not None)

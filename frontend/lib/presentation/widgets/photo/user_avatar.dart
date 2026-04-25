@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import '../../../core/utils/url_utils.dart';
 import '../common/app_cached_network_image.dart';
 
-// A reusable widget to display a user's avatar across the app.
+// A reusable widget to display a user's photo across the app.
 // It automatically handles the fallback state when the user doesn't have a photo.
 class UserAvatar extends StatelessWidget {
   // Optional URL of the user's profile image from the server.
   final String? photoUrl;
 
-  // Mandatory radius to control the size of the avatar.
+  // Mandatory radius to control the size of the photo.
   final double radius;
 
   const UserAvatar({

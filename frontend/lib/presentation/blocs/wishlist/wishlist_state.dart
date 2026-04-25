@@ -27,7 +27,7 @@ class WishlistsListLoaded extends WishlistState {
 // State showing a successfully loaded specific wishlist and its gifts
 class WishlistDetailsLoaded extends WishlistState {
   final WishlistModel wishlist;
-  final List<GiftModel> gifts;
+  final List<SharedGiftModel> gifts;
 
   const WishlistDetailsLoaded({required this.wishlist, required this.gifts});
 

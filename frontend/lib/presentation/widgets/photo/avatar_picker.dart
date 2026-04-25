@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 
-// Reusable avatar picker widget handling both local files and network images
+// Reusable photo picker widget handling both local files and network images
 class AvatarPicker extends StatelessWidget {
   // The newly picked local image file
   final File? localImage;
@@ -15,7 +15,7 @@ class AvatarPicker extends StatelessWidget {
   // Disables interaction when true
   final bool isLoading;
 
-  // Controls the size of the avatar
+  // Controls the size of the photo
   final double radius;
 
   const AvatarPicker({

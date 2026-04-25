@@ -62,12 +62,12 @@ class WishlistRepository {
   }
 
   // Retrieve all gifts belonging to a specific wishlist
-  Future<List<GiftModel>> getWishlistGifts(int wishlistId) async {
+  Future<List<SharedGiftModel>> getWishlistGifts(int wishlistId) async {
     try {
       final response = await _dio.get('/wishlists/$wishlistId/gifts');
 
       return (response.data as List)
-          .map((json) => GiftModel.fromJson(json))
+          .map((json) => SharedGiftModel.fromJson(json))
           .toList();
     } catch (e) {
       rethrow;

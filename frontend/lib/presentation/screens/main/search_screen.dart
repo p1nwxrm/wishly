@@ -4,6 +4,7 @@ import 'package:auto_route/auto_route.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/router/app_router.dart';
+import '../../../data/models/user_subscription_models.dart';
 import '../../blocs/blocs.dart';
 import '../../widgets/cards/user_card.dart';
 import '../../utils/app_snackbars.dart';
@@ -14,7 +15,6 @@ class SearchScreen extends StatefulWidget implements AutoRouteWrapper {
 
   @override
   Widget wrappedRoute(BuildContext context) {
-    // Standardizing on AutoRouteWrapper for dependency injection on a route level
     return MultiBlocProvider(
       providers: [
         BlocProvider(
@@ -45,6 +45,11 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
+  // --------------------------------------------------------------------------
+  // Extracted Methods (Actions & Callbacks)
+  // --------------------------------------------------------------------------
+
+  /// Scrolls the list back to the top seamlessly.
   void _scrollToTop() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -54,6 +59,117 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
   }
+
+  /// Handles tap events from the bottom navigation bar to refresh the tab.
+  void _handleTabRefresh(int? tabIndex) {
+    // Triggered when the search tab is tapped again (assuming index is 1)
+    if (tabIndex == 1) {
+      final query = _searchController.text;
+      if (query.trim().isEmpty) {
+        context.read<SearchBloc>().add(ClearSearch());
+      } else {
+        context.read<SearchBloc>().add(RefreshSearch(query: query));
+      }
+      _scrollToTop();
+    }
+  }
+
+  /// Handles changes in the search text field.
+  void _handleSearchQueryChanged(String query) {
+    setState(() {
+      _loadingUserIds.clear();
+    });
+
+    // Reset the search if the field is cleared
+    if (query.trim().isEmpty) {
+      context.read<SearchBloc>().add(ClearSearch());
+    } else {
+      context.read<SearchBloc>().add(SearchUsers(query: query));
+    }
+  }
+
+  /// Clears the search field and resets the state.
+  void _handleClearSearch() {
+    _searchController.clear();
+    context.read<SearchBloc>().add(ClearSearch());
+  }
+
+  /// Retries the search with the current query.
+  void _handleRetrySearch() {
+    final currentQuery = _searchController.text;
+    if (currentQuery.trim().isNotEmpty) {
+      context.read<SearchBloc>().add(SearchUsers(query: currentQuery));
+    } else {
+      context.read<SearchBloc>().add(ClearSearch());
+    }
+  }
+
+  /// Navigates to a user's profile and refreshes the search upon return.
+  Future<void> _handleUserTap(UserConnectionModel userConnection) async {
+    // Navigate to profile on tap and wait for it to return
+    await context.pushRoute(
+      OtherUserProfileRoute(username: userConnection.user.username),
+    );
+
+    if (mounted) {
+      final currentQuery = _searchController.text;
+      if (currentQuery.trim().isNotEmpty) {
+        context.read<SearchBloc>().add(RefreshSearch(query: currentQuery));
+      }
+    }
+  }
+
+  /// Toggles the follow/unfollow state for a specific user.
+  void _handleFollowToggle(UserConnectionModel userConnection, int currentUserId) {
+    final targetUserId = userConnection.user.id;
+
+    // Prevent spamming the button while the action is loading
+    if (_loadingUserIds.contains(targetUserId)) return;
+
+    setState(() {
+      _loadingUserIds.add(targetUserId);
+    });
+
+    final subBloc = context.read<SubscriptionBloc>();
+
+    if (userConnection.isFollowedByMe) {
+      subBloc.add(UnfollowUser(
+        targetUserId: targetUserId,
+        currentUserId: currentUserId,
+      ));
+    } else {
+      subBloc.add(FollowUser(
+        targetUserId: targetUserId,
+        currentUserId: currentUserId,
+      ));
+    }
+  }
+
+  /// Handles the subscription state changes (success/error logic).
+  void _handleSubscriptionStateChange(BuildContext context, SubscriptionState state) {
+    if (state is SubscriptionError) {
+      setState(() {
+        _loadingUserIds.clear();
+      });
+      AppSnackbars.showError(context, state.message);
+    } else if (state is SubscriptionActionSuccess) {
+      setState(() {
+        _loadingUserIds.remove(state.targetUserId);
+      });
+
+      AppSnackbars.showSuccess(context, state.message);
+
+      // Refresh the current search query to update "isFollowedByMe" statuses
+      final currentQuery = _searchController.text;
+      if (currentQuery.trim().isNotEmpty) {
+        context.read<SearchBloc>().add(RefreshSearch(query: currentQuery));
+      }
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Build Method
+  // --------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -65,23 +181,13 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return MultiBlocListener(
       listeners: [
-        // 1. Listen for tab refresh events to scroll up
+        // Listen for tab refresh events to scroll up
         BlocListener<TabRefreshCubit, int?>(
           bloc: getIt<TabRefreshCubit>(),
-          listener: (context, state) {
-            // Triggered when the search tab is tapped again (assuming index is 1)
-            if (state == 1) {
-              final query = _searchController.text;
-              if (query.trim().isEmpty) {
-                context.read<SearchBloc>().add(ClearSearch());
-              } else {
-                context.read<SearchBloc>().add(RefreshSearch(query: query));
-              }
-              _scrollToTop();
-            }
-          },
+          listener: (context, state) => _handleTabRefresh(state),
         ),
 
+        // Clear loading IDs when the search state changes
         BlocListener<SearchBloc, SearchState>(
           listener: (context, state) {
             if (state is SearchLoaded || state is SearchError || state is SearchInitial) {
@@ -92,33 +198,9 @@ class _SearchScreenState extends State<SearchScreen> {
           },
         ),
 
-        // 2. Listen for subscription actions (success or error) to show snackbars
+        // Listen for subscription actions (success or error) to show snackbars
         BlocListener<SubscriptionBloc, SubscriptionState>(
-          listener: (context, state) {
-            if (state is SubscriptionError) {
-              setState(() {
-                _loadingUserIds.clear();
-              });
-            }
-
-            if (state is SubscriptionActionSuccess) {
-              setState(() {
-                _loadingUserIds.remove(state.targetUserId);
-              });
-            }
-
-            if (state is SubscriptionActionSuccess) {
-              AppSnackbars.showSuccess(context, state.message);
-
-              // Refresh the current search query to update "isFollowedByMe" statuses
-              final currentQuery = _searchController.text;
-              if (currentQuery.trim().isNotEmpty) {
-                context.read<SearchBloc>().add(RefreshSearch(query: currentQuery));
-              }
-            } else if (state is SubscriptionError) {
-              AppSnackbars.showError(context, state.message);
-            }
-          },
+          listener: _handleSubscriptionStateChange,
         ),
       ],
       child: Scaffold(
@@ -127,41 +209,28 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         body: Column(
           children: [
-            // 1. Search field
+            // Search field
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: TextField(
                 controller: _searchController,
-                onChanged: (query) {
-                  setState(() {
-                    _loadingUserIds.clear();
-                  });
-
-                  // Reset the search if the field is cleared
-                  if (query.trim().isEmpty) {
-                    context.read<SearchBloc>().add(ClearSearch());
-                  } else {
-                    context.read<SearchBloc>().add(SearchUsers(query: query));
-                  }
-                },
+                onChanged: _handleSearchQueryChanged,
                 decoration: InputDecoration(
                   hintText: 'Search users...',
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      context.read<SearchBloc>().add(ClearSearch());
-                    },
+                    onPressed: _handleClearSearch,
                   ),
                 ),
               ),
             ),
 
-            // 2. Search results list
+            // Search results list
             Expanded(
               child: BlocBuilder<SearchBloc, SearchState>(
                 builder: (context, state) {
+                  // Initial state
                   if (state is SearchInitial) {
                     return Center(
                       child: Text(
@@ -171,26 +240,22 @@ class _SearchScreenState extends State<SearchScreen> {
                     );
                   }
 
+                  // Loading state
                   if (state is SearchLoading) {
                     return const Center(
                       child: CircularProgressIndicator(),
                     );
                   }
 
+                  // Error state
                   if (state is SearchError) {
                     return SearchErrorView(
                       message: state.message,
-                      onRetry: () {
-                        final currentQuery = _searchController.text;
-                        if (currentQuery.trim().isNotEmpty) {
-                          context.read<SearchBloc>().add(SearchUsers(query: currentQuery));
-                        } else {
-                          context.read<SearchBloc>().add(ClearSearch());
-                        }
-                      },
+                      onRetry: _handleRetrySearch,
                     );
                   }
 
+                  // Loaded state
                   if (state is SearchLoaded) {
                     final users = state.users;
 
@@ -204,7 +269,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     }
 
                     return ListView.separated(
-                      controller: _scrollController, // Attach controller here
+                      controller: _scrollController,
                       itemCount: users.length,
                       separatorBuilder: (context, index) => const SizedBox(height: 12),
                       // Add bottom padding for better scroll appearance
@@ -217,56 +282,11 @@ class _SearchScreenState extends State<SearchScreen> {
                           connection: userConnection,
                           currentUserId: currentUserId,
                           isLoading: _loadingUserIds.contains(userConnection.user.id),
-                          onTap: () async {
-                            // Navigate to profile on tap and wait for it to return
-                            await context.pushRoute(
-                              OtherUserProfileRoute(username: userConnection.user.username),
-                            );
-
-                            if (context.mounted) {
-                              final currentQuery = _searchController.text;
-                              if (currentQuery.trim().isNotEmpty) {
-                                context.read<SearchBloc>().add(RefreshSearch(query: currentQuery));
-                              }
-                            }
-                          },
-                          // 3. Implemented Follow/Unfollow toggle directly (no dialog)
+                          onTap: () => _handleUserTap(userConnection),
+                          // Disable follow toggle if it's the current user
                           onFollowToggle: isMe
-                              ? null // Disable button if it's the current user
-                              : () {
-                            final subBloc = context.read<SubscriptionBloc>();
-
-                            if (_loadingUserIds.contains(userConnection.user.id)) return;
-
-                            setState(() {
-                              _loadingUserIds.add(userConnection.user.id);
-                            });
-
-                            if (userConnection.isFollowedByMe) {
-                              subBloc.add(UnfollowUser(
-                                targetUserId: userConnection.user.id,
-                                currentUserId: currentUserId,
-                              ));
-                            } else {
-                              subBloc.add(FollowUser(
-                                targetUserId: userConnection.user.id,
-                                currentUserId: currentUserId,
-                              ));
-                            }
-
-                            /*
-                            if (mounted && _loadingUserIds.contains(userConnection.user.id)) {
-                              setState(() {
-                                _loadingUserIds.remove(userConnection.user.id);
-                              });
-                              final currentQuery = _searchController.text;
-                              if (currentQuery.trim().isNotEmpty) {
-                                context.read<SearchBloc>().add(RefreshSearch(query: currentQuery));
-                              }
-                            }
-
-                             */
-                          },
+                              ? null
+                              : () => _handleFollowToggle(userConnection, currentUserId),
                         );
                       },
                     );

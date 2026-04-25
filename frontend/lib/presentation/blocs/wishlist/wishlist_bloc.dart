@@ -68,7 +68,10 @@ class WishlistBloc extends Bloc<WishlistEvent, WishlistState> {
       LoadWishlistDetails event,
       Emitter<WishlistState> emit,
       ) async {
-    emit(WishlistLoading());
+    if (!event.isRefresh) {
+      emit(WishlistLoading());
+    }
+
     try {
       final results = await Future.wait([
         _wishlistRepository.getWishlistById(event.wishlistId),
@@ -76,9 +79,9 @@ class WishlistBloc extends Bloc<WishlistEvent, WishlistState> {
       ]);
 
       final wishlist = results[0] as WishlistModel;
-      final gifts = results[1] as List<GiftModel>;
+      final sharedGifts = results[1] as List<SharedGiftModel>;
 
-      emit(WishlistDetailsLoaded(wishlist: wishlist, gifts: gifts));
+      emit(WishlistDetailsLoaded(wishlist: wishlist, gifts: sharedGifts));
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);

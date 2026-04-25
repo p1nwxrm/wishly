@@ -46,9 +46,5 @@ class AppRouter extends RootStackRouter {
         guards: [authGuard],
         page: WishlistDetailsRoute.page
     ),
-    AutoRoute(
-        guards: [authGuard],
-        page: AddGiftRoute.page
-    ),
   ];
 }
