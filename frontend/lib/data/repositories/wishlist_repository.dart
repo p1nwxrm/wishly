@@ -26,7 +26,7 @@ class WishlistRepository {
   // Retrieve user profile and all their visible wishlists
   Future<UserWishlistsModel> getUserWishlists(String username) async {
     try {
-      final response = await _dio.get('/wishlists/user/$username');
+      final response = await _dio.get('/users/$username/wishlists');
       return UserWishlistsModel.fromJson(response.data);
     } catch (e) {
       rethrow;

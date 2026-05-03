@@ -1,16 +1,19 @@
 import os
 import uvicorn # type: ignore
+import logging
 from fastapi import FastAPI # type: ignore
 from fastapi.middleware.cors import CORSMiddleware # type: ignore
+from slowapi.middleware import SlowAPIMiddleware # type: ignore
 from fastapi.staticfiles import StaticFiles # type: ignore
 
-from app.api.main_router import api_router
-
-# Import SlowAPI components for global rate limiting
 from slowapi import _rate_limit_exceeded_handler # type: ignore
 from slowapi.errors import RateLimitExceeded # type: ignore
-from slowapi.middleware import SlowAPIMiddleware # type: ignore
+from app.api.main_router import api_router
 from app.core.limiter import limiter
+from app.core.middleware import ColoredLoggingMiddleware
+
+# Disable the standard uvicorn access log
+logging.getLogger("uvicorn.access").disabled = True
 
 # Initialize the main FastAPI application instance.
 # The title and description will automatically appear in the Swagger UI documentation.
@@ -22,12 +25,21 @@ app = FastAPI(
 
 
 # ==========================================
-# CORS CONFIGURATION
+# MIDDLEWARE REGISTRATION
 # ==========================================
-# CORS (Cross-Origin Resource Sharing) allows your frontend (e.g., React or Flutter)
+# Note: Middlewares are executed in an "onion" structure.
+# We add the logging middleware first so it wraps the entire request cycle
+# and accurately logs the total processing time.
+
+# 1. Custom colored logging
+app.add_middleware(ColoredLoggingMiddleware)
+
+# 2. SlowAPI middleware to enforce global default_limits across all endpoints
+app.add_middleware(SlowAPIMiddleware)
+
+# 3. CORS (Cross-Origin Resource Sharing) allows your frontend (e.g., React or Flutter)
 # to make requests to this backend.
 # In production, replace "*" with specific allowed domains like ["https://my-frontend.com"].
-
 origins = [
     "*",
 ]
@@ -50,21 +62,15 @@ app.state.limiter = limiter # type: ignore
 # Add the custom exception handler for HTTP 429 errors
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Add the SlowAPI middleware to enforce global default_limits across all endpoints
-app.add_middleware(SlowAPIMiddleware)
-
 
 # ==========================================
 # STATIC FILES DIRECTORY CONFIGURATION
 # ==========================================
-
-# 1. Create the base 'uploads' directory and subfolders if they don't exist
+# Create the base 'uploads' directory and subfolders if they don't exist
 os.makedirs("uploads/profiles", exist_ok=True)
 os.makedirs("uploads/gifts", exist_ok=True)
 
-# 2. Mount the directory to serve files at the '/static' URL path
-# Example: A file located at "uploads/profiles/avatar.jpg"
-# will be accessible via "http://127.0.0.1:8000/static/profiles/avatar.jpg"
+# Mount the directory to serve files at the '/static' URL path
 app.mount("/static", StaticFiles(directory="uploads"), name="static")
 
 

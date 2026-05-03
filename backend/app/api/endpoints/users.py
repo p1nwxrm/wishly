@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app import crud
+from app import crud, schemas
 from app.api.dependencies import get_db, get_current_user
 from app.models.models import User
 from app.core.file_manager import save_upload_file
-
-from app.schemas.user import UserUpdate, PrivateUser, UserProfile
 
 # Initialize the router
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -15,7 +13,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 # USER ROUTERS
 # ==========================================
 
-@router.get("/me", response_model=PrivateUser)
+@router.get("/me", response_model=schemas.user.PrivateUser)
 async def get_my_user(
         current_user: User = Depends(get_current_user)
 ):
@@ -28,9 +26,9 @@ async def get_my_user(
     return current_user
 
 
-@router.patch("/me", response_model=PrivateUser)
+@router.patch("/me", response_model=schemas.user.PrivateUser)
 async def update_my_user(
-        user_in: UserUpdate,
+        user_in: schemas.user.UserUpdate,
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
@@ -50,7 +48,7 @@ async def update_my_user(
     return updated_user
 
 
-@router.post("/me/photo", response_model=PrivateUser)
+@router.post("/me/photo", response_model=schemas.user.PrivateUser)
 async def upload_my_photo(
         file: UploadFile = File(...),
         current_user: User = Depends(get_current_user),
@@ -63,7 +61,7 @@ async def upload_my_photo(
     photo_url = save_upload_file(file, subfolder="profiles")
 
     # 2. Manually construct the Pydantic update schema
-    user_update_data = UserUpdate(photo_url=photo_url)
+    user_update_data = schemas.user.UserUpdate(photo_url=photo_url)
 
     # 3. Pass it to the existing update function
     updated_user = await crud.user.update_user(
@@ -74,7 +72,7 @@ async def upload_my_photo(
 
     return updated_user
 
-@router.get("/profile/{username}", response_model=UserProfile)
+@router.get("/profile/{username}", response_model=schemas.user.UserProfile)
 async def get_user_profile(
         username: str,
         db: AsyncSession = Depends(get_db),
@@ -95,3 +93,35 @@ async def get_user_profile(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
     return profile_data
+
+
+@router.get("/{username}/wishlists", response_model=schemas.composites.UserWishlists)
+async def read_user_wishlists(
+        username: str,
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieves the target user's profile and their visible wishlists.
+    """
+    # 1. Fetch user
+    social_user = await crud.user.get_social_user_by_username(
+        db=db,
+        target_username=username,
+        current_user_id=current_user.id
+    )
+    if not social_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # 2. Fetch user's wishlists (filtered by visibility inside the CRUD)
+    wishlists = await crud.wishlist.get_wishlists_by_owner(
+        db=db,
+        target_user_id=social_user["id"],
+        current_user_id=current_user.id
+    )
+
+    # 3. Pack into the composite schema
+    return {
+        "user": social_user,
+        "wishlists": wishlists
+    }

@@ -27,38 +27,6 @@ async def create_new_wishlist(
     )
 
 
-@router.get("/user/{username}", response_model=schemas.composites.UserWishlists)
-async def read_user_wishlists(
-        username: str,
-        db: AsyncSession = Depends(get_db),
-        current_user: User = Depends(get_current_user)
-):
-    """
-    Retrieves the target user's profile and their visible wishlists.
-    """
-    # 1. Fetch user
-    social_user = await crud.user.get_social_user_by_username(
-        db=db,
-        target_username=username,
-        current_user_id=current_user.id
-    )
-    if not social_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    # 2. Fetch user's wishlists (filtered by visibility inside the CRUD)
-    wishlists = await crud.wishlist.get_wishlists_by_owner(
-        db=db,
-        target_user_id=social_user["id"],
-        current_user_id=current_user.id
-    )
-
-    # 3. Pack into the composite schema
-    return {
-        "user": social_user,
-        "wishlists": wishlists
-    }
-
-
 @router.get("/{wishlist_id}/gifts", response_model=schemas.wishlist.WishlistDetails)
 async def read_wishlist_gifts(
         wishlist_id: int,
