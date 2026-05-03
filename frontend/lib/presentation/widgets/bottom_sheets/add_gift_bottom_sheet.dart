@@ -40,6 +40,10 @@ class _AddGiftBottomSheetState extends State<AddGiftBottomSheet> {
     super.dispose();
   }
 
+  // --------------------------------------------------------------------------
+  // Actions
+  // --------------------------------------------------------------------------
+
   void _onSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
       final name = _nameController.text.trim();
@@ -73,6 +77,33 @@ class _AddGiftBottomSheetState extends State<AddGiftBottomSheet> {
       });
     }
   }
+
+  // --------------------------------------------------------------------------
+  // Validators
+  // --------------------------------------------------------------------------
+
+  /// Validates the gift name input
+  String? _validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter a gift name';
+    }
+    return null;
+  }
+
+  /// Validates the price input
+  String? _validatePrice(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter a price';
+    }
+    if (double.tryParse(value.replaceAll(',', '.')) == null) {
+      return 'Please enter a valid number';
+    }
+    return null;
+  }
+
+  // --------------------------------------------------------------------------
+  // Build Method
+  // --------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -143,12 +174,7 @@ class _AddGiftBottomSheetState extends State<AddGiftBottomSheet> {
                               labelText: 'Name *',
                               hintText: 'e.g., Wireless Headphones',
                             ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter a gift name';
-                              }
-                              return null;
-                            },
+                            validator: _validateName,
                           ),
                           const SizedBox(height: 16),
 
@@ -162,15 +188,7 @@ class _AddGiftBottomSheetState extends State<AddGiftBottomSheet> {
                               hintText: '0.00',
                               prefixText: '\$ ',
                             ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter a price';
-                              }
-                              if (double.tryParse(value.replaceAll(',', '.')) == null) {
-                                return 'Please enter a valid number';
-                              }
-                              return null;
-                            },
+                            validator: _validatePrice,
                           ),
                           const SizedBox(height: 16),
 

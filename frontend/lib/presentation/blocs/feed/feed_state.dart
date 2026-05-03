@@ -1,6 +1,5 @@
 part of 'feed_bloc.dart';
 
-// Base class for all feed states
 abstract class FeedState extends Equatable {
   const FeedState();
 
@@ -8,23 +7,35 @@ abstract class FeedState extends Equatable {
   List<Object?> get props => [];
 }
 
-// Initial state
 class FeedInitial extends FeedState {}
 
-// State showing a loading indicator
+// Full-screen loading indicator for the very first load
 class FeedLoading extends FeedState {}
 
 // State showing the successfully loaded feed items
 class FeedLoaded extends FeedState {
   final List<SharedGiftModel> feedItems;
+  final bool hasReachedMax;
 
-  const FeedLoaded({required this.feedItems});
+  const FeedLoaded({
+    required this.feedItems,
+    this.hasReachedMax = false,
+  });
+
+  FeedLoaded copyWith({
+    List<SharedGiftModel>? feedItems,
+    bool? hasReachedMax,
+  }) {
+    return FeedLoaded(
+      feedItems: feedItems ?? this.feedItems,
+      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
+    );
+  }
 
   @override
-  List<Object?> get props => [feedItems];
+  List<Object?> get props => [feedItems, hasReachedMax];
 }
 
-// State showing an error message
 class FeedError extends FeedState {
   final String message;
 

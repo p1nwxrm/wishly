@@ -11,28 +11,27 @@ abstract class WishlistState extends Equatable {
 // Initial state before any actions
 class WishlistInitial extends WishlistState {}
 
-// State showing a loading indicator
+// State showing a full-screen loading indicator
 class WishlistLoading extends WishlistState {}
 
-// State showing a successfully loaded list of wishlists (for 'Me' or 'User')
-class WishlistsListLoaded extends WishlistState {
-  final List<WishlistModel> wishlists;
+// State showing a successfully loaded profile and list of wishlists
+class UserWishlistsLoaded extends WishlistState {
+  final UserWishlistsModel data;
 
-  const WishlistsListLoaded({required this.wishlists});
+  const UserWishlistsLoaded({required this.data});
 
   @override
-  List<Object?> get props => [wishlists];
+  List<Object?> get props => [data];
 }
 
-// State showing a successfully loaded specific wishlist and its gifts
+// State showing a successfully loaded specific wishlist and its gifts combined
 class WishlistDetailsLoaded extends WishlistState {
-  final WishlistModel wishlist;
-  final List<SharedGiftModel> gifts;
+  final WishlistDetailsModel wishlistDetails;
 
-  const WishlistDetailsLoaded({required this.wishlist, required this.gifts});
+  const WishlistDetailsLoaded({required this.wishlistDetails});
 
   @override
-  List<Object?> get props => [wishlist, gifts];
+  List<Object?> get props => [wishlistDetails];
 }
 
 // State indicating a successful one-time mutation (create, update, delete)

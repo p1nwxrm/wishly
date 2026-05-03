@@ -1,15 +1,17 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import '../models/user_models.dart';
+import '../models/tag_models.dart';
 
 part 'gift_models.g.dart';
 
 // ==========================================
-// GIFT RESPONSE MODEL
-// Matches GiftResponse in FastAPI
+// 1. RESPONSE MODELS
 // ==========================================
+
+// Matches GiftBase in FastAPI
 @JsonSerializable()
-class GiftModel extends Equatable {
+class GiftBaseModel extends Equatable {
   @JsonKey(name: 'id')
   final int id;
 
@@ -28,32 +30,30 @@ class GiftModel extends Equatable {
   @JsonKey(name: 'is_visible')
   final bool isVisible;
 
+  @JsonKey(name: 'booked_by_user_id')
+  final int? bookedByUserId;
+
+  @JsonKey(name: 'tags', defaultValue: [])
+  final List<TagModel> tags;
+
   @JsonKey(name: 'description')
   final String? description;
 
-  @JsonKey(name: 'wishlist_id')
-  final int wishlistId;
-
-  @JsonKey(name: 'created_at')
-  final DateTime createdAt;
-
-  const GiftModel({
+  const GiftBaseModel({
     required this.id,
     required this.name,
     required this.priceUsd,
     this.photoUrl,
     this.linkUrl,
     required this.isVisible,
+    this.bookedByUserId,
+    this.tags = const [],
     this.description,
-    required this.wishlistId,
-    required this.createdAt,
   });
 
-  // Factory constructor for generating a new instance from a JSON map
-  factory GiftModel.fromJson(Map<String, dynamic> json) => _$GiftModelFromJson(json);
+  factory GiftBaseModel.fromJson(Map<String, dynamic> json) => _$GiftBaseModelFromJson(json);
 
-  // Method for converting the instance to a JSON map
-  Map<String, dynamic> toJson() => _$GiftModelToJson(this);
+  Map<String, dynamic> toJson() => _$GiftBaseModelToJson(this);
 
   @override
   List<Object?> get props => [
@@ -63,51 +63,45 @@ class GiftModel extends Equatable {
     photoUrl,
     linkUrl,
     isVisible,
+    bookedByUserId,
+    tags,
     description,
-    wishlistId,
-    createdAt,
   ];
 }
 
-// ==========================================
-// SHARED GIFT RESPONSE MODEL
 // Matches SharedGift in FastAPI
-// ==========================================
 @JsonSerializable()
-class SharedGiftModel extends Equatable {
-  @JsonKey(name: 'gift')
-  final GiftModel gift;
-
+class SharedGiftModel extends GiftBaseModel {
   @JsonKey(name: 'owner')
-  final UserCompactModel owner;
-
-  @JsonKey(name: 'booked_by')
-  final int? bookedBy;
-
-  @JsonKey(name: 'is_mutual_subscription', defaultValue: false)
-  final bool isMutualSubscription;
+  final SocialUserModel owner;
 
   const SharedGiftModel({
-    required this.gift,
+    required super.id,
+    required super.name,
+    required super.priceUsd,
+    super.photoUrl,
+    super.linkUrl,
+    required super.isVisible,
+    super.bookedByUserId,
+    super.tags = const [],
+    super.description,
     required this.owner,
-    this.bookedBy,
-    required this.isMutualSubscription,
   });
 
-  // Factory constructor for generating a new instance from a JSON map
   factory SharedGiftModel.fromJson(Map<String, dynamic> json) => _$SharedGiftModelFromJson(json);
 
-  // Method for converting the instance to a JSON map
+  @override
   Map<String, dynamic> toJson() => _$SharedGiftModelToJson(this);
 
   @override
-  List<Object?> get props => [gift, owner, bookedBy, isMutualSubscription];
+  List<Object?> get props => [...super.props, owner];
 }
 
 // ==========================================
-// GIFT CREATE MODEL
-// Matches GiftCreate in FastAPI
+// 2. REQUEST MODELS
 // ==========================================
+
+// Matches GiftCreate in FastAPI
 @JsonSerializable()
 class GiftCreateModel extends Equatable {
   @JsonKey(name: 'name')
@@ -156,11 +150,7 @@ class GiftCreateModel extends Equatable {
   ];
 }
 
-// ==========================================
-// GIFT UPDATE MODEL
 // Matches GiftUpdate in FastAPI (PATCH request)
-// ==========================================
-// includeIfNull: false ensures we don't send null fields to the backend
 @JsonSerializable(includeIfNull: false)
 class GiftUpdateModel extends Equatable {
   @JsonKey(name: 'name')

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/router/app_router.dart';
@@ -20,19 +21,24 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  // Controller to manage the scroll position of the feed list
+  // Controller to manage the scroll position and pagination
   final ScrollController _scrollController = ScrollController();
+
+  // Throttle timer to prevent spamming the Bloc with events
+  DateTime? _lastLoadTime;
 
   @override
   void initState() {
     super.initState();
+    // Add listener for pagination
+    _scrollController.addListener(_onScroll);
     // Trigger initial data load for the feed
-    context.read<FeedBloc>().add(const LoadFeed());
+    context.read<FeedBloc>().add(LoadInitialFeed());
   }
 
   @override
   void dispose() {
-    // Clean up the controller when the widget is disposed
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -40,6 +46,31 @@ class _FeedScreenState extends State<FeedScreen> {
   // --------------------------------------------------------------------------
   // Extracted Methods (Actions & Callbacks)
   // --------------------------------------------------------------------------
+
+  /// Detects when the user scrolls near the bottom to load more items
+  void _onScroll() {
+    // 1. Check if we are within 200 pixels of the bottom
+    final isNearBottom = _scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200;
+
+    // 2. Check if the user is actually scrolling DOWN
+    final isScrollingDown = _scrollController.position.userScrollDirection == ScrollDirection.reverse;
+
+    if (isNearBottom && isScrollingDown) {
+      final feedState = context.read<FeedBloc>().state;
+
+      // 3. Check if the feed is loaded AND we have more items to fetch
+      if (feedState is FeedLoaded && !feedState.hasReachedMax) {
+
+        // 4. Debounce: Allow triggering pagination only once per second
+        final now = DateTime.now();
+        if (_lastLoadTime == null || now.difference(_lastLoadTime!) > const Duration(seconds: 1)) {
+          _lastLoadTime = now;
+          context.read<FeedBloc>().add(LoadMoreFeed());
+        }
+      }
+    }
+  }
 
   /// Smoothly animates the scroll position back to the top of the list
   void _scrollToTop() {
@@ -61,14 +92,14 @@ class _FeedScreenState extends State<FeedScreen> {
     return 0; // Default fallback if user is not loaded
   }
 
-  /// Triggers a hard refresh of the feed data
+  /// Triggers a silent pull-to-refresh
   Future<void> _handleRefreshFeed() async {
-    context.read<FeedBloc>().add(const LoadFeed(isRefresh: true));
+    context.read<FeedBloc>().add(RefreshFeed());
   }
 
-  /// Retries loading the feed when an error has occurred
+  /// Retries loading the feed initially when an error has occurred
   void _handleRetryFeed() {
-    context.read<FeedBloc>().add(const LoadFeed());
+    context.read<FeedBloc>().add(LoadInitialFeed());
   }
 
   /// Navigates the user to the Search tab to find friends
@@ -78,21 +109,13 @@ class _FeedScreenState extends State<FeedScreen> {
 
   /// Handles the logic for booking or unbooking a gift
   void _handleBookToggle(SharedGiftModel feedItem, int currentUserId) {
-    final isBookedByMe = feedItem.bookedBy == currentUserId;
-    final requiresMutualSubscription = !feedItem.isMutualSubscription && !isBookedByMe;
-
-    if (requiresMutualSubscription) {
-      AppSnackbars.showError(
-        context,
-        'You and the owner must follow each other to book gifts!',
-      );
-      return;
-    }
+    // Model flat structure: properties are directly on feedItem
+    final isBookedByMe = feedItem.bookedByUserId == currentUserId;
 
     if (isBookedByMe) {
-      context.read<BookingBloc>().add(UnbookGift(giftId: feedItem.gift.id));
+      context.read<BookingBloc>().add(UnbookGift(giftId: feedItem.id));
     } else {
-      context.read<BookingBloc>().add(BookGift(giftId: feedItem.gift.id));
+      context.read<BookingBloc>().add(BookGift(giftId: feedItem.id));
     }
   }
 
@@ -132,7 +155,7 @@ class _FeedScreenState extends State<FeedScreen> {
               // Close the bottom sheet immediately after dispatching the action
               Navigator.of(ctx).pop();
             },
-            onOpenLink: () => _handleOpenExternalLink(ctx, feedItem.gift.linkUrl),
+            onOpenLink: () => _handleOpenExternalLink(ctx, feedItem.linkUrl),
           ),
         );
       },
@@ -199,6 +222,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
                 return FeedListView(
                   feedItems: state.feedItems,
+                  hasReachedMax: state.hasReachedMax,
                   currentUserId: currentUserId,
                   scrollController: _scrollController,
                   onRefresh: _handleRefreshFeed,
@@ -321,6 +345,7 @@ class FeedErrorView extends StatelessWidget {
 /// Widget representing the scrollable list of feed items
 class FeedListView extends StatelessWidget {
   final List<SharedGiftModel> feedItems;
+  final bool hasReachedMax;
   final int currentUserId;
   final ScrollController scrollController;
   final Future<void> Function() onRefresh;
@@ -330,6 +355,7 @@ class FeedListView extends StatelessWidget {
   const FeedListView({
     super.key,
     required this.feedItems,
+    required this.hasReachedMax,
     required this.currentUserId,
     required this.scrollController,
     required this.onRefresh,
@@ -345,17 +371,38 @@ class FeedListView extends StatelessWidget {
         key: const PageStorageKey<String>('feed_list_key'),
         controller: scrollController,
         padding: const EdgeInsets.all(16.0),
-        itemCount: feedItems.length,
+        itemCount: feedItems.length + 1,
         separatorBuilder: (context, index) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
+          if (index >= feedItems.length) {
+            // If there are no more items to load, show a completion message
+            if (hasReachedMax) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Center(
+                  child: Text(
+                    "You've viewed the entire feed 🎉",
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              );
+            }
+
+            // If there are more items to load, show a spinner
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24.0),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
           final feedItem = feedItems[index];
 
           // Rebuild only this specific card when its booking state changes
           return BlocBuilder<BookingBloc, BookingState>(
             builder: (context, bookingState) {
-              // Flag this specific card as loading if its ID matches the bloc state
-              final isThisCardLoading = bookingState is BookingLoading &&
-                  bookingState.giftId == feedItem.gift.id;
+              // Updated to BookingGiftLoading to match the new BookingBloc state
+              final isThisCardLoading = bookingState is BookingGiftLoading &&
+                  bookingState.giftId == feedItem.id;
 
               return FeedGiftCard(
                 feedItem: feedItem,

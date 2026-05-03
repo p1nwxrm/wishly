@@ -5,7 +5,7 @@ part 'tag_models.g.dart';
 
 // ==========================================
 // TAG RESPONSE MODEL
-// Matches TagResponse in FastAPI
+// Matches Tag in FastAPI
 // ==========================================
 @JsonSerializable()
 class TagModel extends Equatable {
@@ -18,14 +18,10 @@ class TagModel extends Equatable {
   @JsonKey(name: 'description')
   final String? description;
 
-  @JsonKey(name: 'created_by_user_id')
-  final int createdByUserId;
-
   const TagModel({
     required this.id,
     required this.name,
     this.description,
-    required this.createdByUserId,
   });
 
   // Factory constructor for generating a new instance from a JSON map
@@ -35,7 +31,7 @@ class TagModel extends Equatable {
   Map<String, dynamic> toJson() => _$TagModelToJson(this);
 
   @override
-  List<Object?> get props => [id, name, description, createdByUserId];
+  List<Object?> get props => [id, name, description];
 }
 
 // ==========================================

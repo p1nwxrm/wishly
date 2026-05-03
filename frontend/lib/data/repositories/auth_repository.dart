@@ -27,7 +27,7 @@ class AuthRepository {
       );
 
       // Parse the response using our strongly-typed TokenModel
-      final tokenData = TokenModel.fromJson(response.data);
+      final tokenData = TokenSetModel.fromJson(response.data);
 
       // Validate both tokens before saving
       if (tokenData.accessToken.isNotEmpty && tokenData.refreshToken.isNotEmpty) {
@@ -41,21 +41,24 @@ class AuthRepository {
   }
 
   // Register a new user using the strongly-typed UserCreateModel
-  Future<void> register(UserCreateModel userModel) async {
+  Future<PrivateUserModel> register(UserCreateModel userModel) async {
     try {
-      await _dio.post(
-        '/users/register',
+      final response = await _dio.post(
+        '/auth/register',
         // Dio automatically encodes Maps to JSON
         data: userModel.toJson(),
       );
+
+      // FastAPI returns the created PrivateUser
+      return PrivateUserModel.fromJson(response.data);
     } catch (e) {
       rethrow;
     }
   }
 
   // Upload profile photo using MultipartFile
-  // Requires the user to be logged in (token will be injected by AuthInterceptor)
-  Future<void> uploadProfilePhoto(File photoFile) async {
+  // Note: Architecturally, this could live in UserRepository, but kept here for now.
+  Future<PrivateUserModel> uploadProfilePhoto(File photoFile) async {
     try {
       // Create FormData with the file
       // The key 'file' must match the parameter name in FastAPI: file: UploadFile = File(...)
@@ -66,10 +69,13 @@ class AuthRepository {
         ),
       });
 
-      await _dio.post(
+      final response = await _dio.post(
         '/users/me/photo',
         data: formData,
       );
+
+      // FastAPI returns the updated PrivateUser
+      return PrivateUserModel.fromJson(response.data);
     } catch (e) {
       rethrow;
     }
@@ -84,7 +90,7 @@ class AuthRepository {
   Future<void> logout() async {
     try {
       // Send request to the backend to invalidate the current tokens
-      await _dio.post('/users/logout');
+      await _dio.post('/auth/logout');
     } catch (e) {
       // Ignore network errors during logout.
       // If the backend is unreachable, we still must clear local data.
@@ -105,19 +111,19 @@ class AuthRepository {
   }
 
   // Perform a real network request to verify if the session is alive
-  Future<UserModel> verifySession() async {
+  Future<PrivateUserModel> verifySession() async {
     try {
-      // We hit a protected endpoint. Based on your upload method, '/users/me' exists.
+      // We hit a protected endpoint.
       // If the token is expired, AuthInterceptor will automatically try to refresh it.
       // If refresh fails, it will throw a DioException.
       final response = await _dio.get('/users/me');
 
-      // Parse the response into our strongly-typed UserModel
-      return UserModel.fromJson(response.data);
+      // Parse the response into our strongly-typed PrivateUserModel
+      return PrivateUserModel.fromJson(response.data);
     } catch (e) {
       // If the request completely fails (e.g., both tokens are dead),
       // ensure we clean up local storage and rethrow the error for the BLoC.
-      await _storage.clearAll();
+      await clearLocalSession();
       rethrow;
     }
   }

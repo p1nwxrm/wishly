@@ -20,9 +20,9 @@ class AuthLoading extends AuthState {
 
 // State indicating successful authentication
 class AuthSuccess extends AuthState {
-  final UserModel? user; // Optional, because standard login might not return it right away
+  final PrivateUserModel user;
 
-  const AuthSuccess({this.user});
+  const AuthSuccess({required this.user});
 
   @override
   List<Object?> get props => [user];

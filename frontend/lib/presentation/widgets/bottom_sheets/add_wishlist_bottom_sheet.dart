@@ -40,7 +40,6 @@ class _AddWishlistBottomSheetState extends State<AddWishlistBottomSheet> {
         final createModel = WishlistCreateModel(
           title: _titleController.text.trim(),
           isVisible: _isVisible,
-          ownerId: userState.user.id,
         );
 
         // Dispatch the creation event

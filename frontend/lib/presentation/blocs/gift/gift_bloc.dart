@@ -11,13 +11,13 @@ import '../../../data/repositories/gift_repository.dart';
 part 'gift_event.dart';
 part 'gift_state.dart';
 
-// Bloc responsible for managing individual gift logic
+// Bloc responsible for managing individual gift logic (create, read, update, delete)
 class GiftBloc extends Bloc<GiftEvent, GiftState> {
   final GiftRepository _giftRepository;
   final Talker _talker;
 
   GiftBloc(this._giftRepository, this._talker) : super(GiftInitial()) {
-    on<LoadGiftDetails>(_onLoadGiftDetails);
+    on<LoadGift>(_onLoadGift);
     on<CreateGift>(_onCreateGift);
     on<UpdateGift>(_onUpdateGift);
     on<UploadGiftPhoto>(_onUploadGiftPhoto);
@@ -25,14 +25,14 @@ class GiftBloc extends Bloc<GiftEvent, GiftState> {
   }
 
   // Handle fetching details of a specific gift
-  Future<void> _onLoadGiftDetails(
-      LoadGiftDetails event,
+  Future<void> _onLoadGift(
+      LoadGift event,
       Emitter<GiftState> emit,
       ) async {
     emit(GiftLoading());
     try {
-      final gift = await _giftRepository.getGiftById(event.giftId);
-      emit(GiftLoaded(gift: gift));
+      final sharedGift = await _giftRepository.getSharedGiftById(event.giftId);
+      emit(GiftLoaded(sharedGift: sharedGift));
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       emit(GiftError(message: ApiErrorParser.extractMessage(e)));
@@ -76,7 +76,7 @@ class GiftBloc extends Bloc<GiftEvent, GiftState> {
     try {
       final updatedGift = await _giftRepository.updateGift(event.giftId, event.updateModel);
       // Emit the updated gift so the UI instantly reflects the changes
-      emit(GiftLoaded(gift: updatedGift));
+      emit(GiftLoaded(sharedGift: updatedGift));
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       emit(GiftError(message: ApiErrorParser.extractMessage(e)));
@@ -95,7 +95,7 @@ class GiftBloc extends Bloc<GiftEvent, GiftState> {
     try {
       final updatedGift = await _giftRepository.uploadGiftPhoto(event.giftId, event.photoFile);
       // Emit the updated gift so the UI can refresh the image
-      emit(GiftLoaded(gift: updatedGift));
+      emit(GiftLoaded(sharedGift: updatedGift));
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       emit(GiftError(message: ApiErrorParser.extractMessage(e)));

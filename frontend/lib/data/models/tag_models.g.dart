@@ -10,14 +10,12 @@ TagModel _$TagModelFromJson(Map<String, dynamic> json) => TagModel(
   id: (json['id'] as num).toInt(),
   name: json['name'] as String,
   description: json['description'] as String?,
-  createdByUserId: (json['created_by_user_id'] as num).toInt(),
 );
 
 Map<String, dynamic> _$TagModelToJson(TagModel instance) => <String, dynamic>{
   'id': instance.id,
   'name': instance.name,
   'description': instance.description,
-  'created_by_user_id': instance.createdByUserId,
 };
 
 TagCreateModel _$TagCreateModelFromJson(Map<String, dynamic> json) =>

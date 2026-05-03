@@ -4,7 +4,7 @@ from pydantic import BaseModel # type: ignore
 # TOKEN RESPONSE SCHEMAS
 # ==========================================
 
-class Token(BaseModel):
+class TokenSet(BaseModel):
     """
     Schema for the JWT token response returned upon successful login.
     Contains both the short-lived access token and the long-lived refresh token.

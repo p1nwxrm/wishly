@@ -1,27 +1,20 @@
 import 'package:flutter/material.dart';
-import '../../../data/models/models.dart';
+import '../../../data/models/user_models.dart';
 import '../photo/user_avatar.dart';
 import '../common/button_loading_indicator.dart';
 
 class UserCard extends StatelessWidget {
-  // Model containing user info and connection status
-  final UserConnectionModel connection;
-
-  // ID of the currently logged-in user to check if this card belongs to them
+  final SocialUserModel user;
   final int currentUserId;
 
-  // Disables the button and shows a loading indicator during API calls.
   final bool isLoading;
 
-  // Action triggered when the entire card is tapped (e.g., to view full profile). Nullable if it's the current user.
   final VoidCallback? onTap;
-
-  // Action triggered when the follow/unfollow button is tapped. Nullable if it's the current user.
   final VoidCallback? onFollowToggle;
 
   const UserCard({
     super.key,
-    required this.connection,
+    required this.user,
     required this.currentUserId,
     this.isLoading = false,
     this.onTap,
@@ -31,8 +24,10 @@ class UserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final user = connection.user;
+
+    // --- BUTTON STATE LOGIC ---
     final isMe = user.id == currentUserId;
+    final isFollowedByMe = user.relationship?.isFollowing ?? false;
 
     return Card(
       // Exactly matches the wishlist card margins
@@ -93,7 +88,7 @@ class UserCard extends StatelessWidget {
                     ),
                   ),
                 )
-                    : (connection.isFollowedByMe
+                    : (isFollowedByMe
                     ? ElevatedButton(
                   onPressed: isLoading ? null : onFollowToggle,
                   style: ElevatedButton.styleFrom(

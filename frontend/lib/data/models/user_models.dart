@@ -1,14 +1,60 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+import '../models/lookup_models.dart';
 
 part 'user_models.g.dart';
 
 // ==========================================
-// USER RESPONSE MODEL
-// Matches UserResponse in FastAPI
+// 1. NESTED COMPONENT MODELS
 // ==========================================
+
 @JsonSerializable()
-class UserModel extends Equatable {
+class UserStatsModel extends Equatable {
+  @JsonKey(name: 'followers_count', defaultValue: 0)
+  final int followersCount;
+
+  @JsonKey(name: 'following_count', defaultValue: 0)
+  final int followingCount;
+
+  const UserStatsModel({
+    this.followersCount = 0,
+    this.followingCount = 0,
+  });
+
+  factory UserStatsModel.fromJson(Map<String, dynamic> json) => _$UserStatsModelFromJson(json);
+  Map<String, dynamic> toJson() => _$UserStatsModelToJson(this);
+
+  @override
+  List<Object?> get props => [followersCount, followingCount];
+}
+
+@JsonSerializable()
+class UserRelationshipModel extends Equatable {
+  @JsonKey(name: 'is_following', defaultValue: false)
+  final bool isFollowing;
+
+  @JsonKey(name: 'is_follower', defaultValue: false)
+  final bool isFollower;
+
+  const UserRelationshipModel({
+    this.isFollowing = false,
+    this.isFollower = false,
+  });
+
+  factory UserRelationshipModel.fromJson(Map<String, dynamic> json) => _$UserRelationshipModelFromJson(json);
+  Map<String, dynamic> toJson() => _$UserRelationshipModelToJson(this);
+
+  @override
+  List<Object?> get props => [isFollowing, isFollower];
+}
+
+// ==========================================
+// 2. RESPONSE MODELS (Using Inheritance)
+// ==========================================
+
+// Matches UserBase in FastAPI
+@JsonSerializable()
+class UserBaseModel extends Equatable {
   @JsonKey(name: 'id')
   final int id;
 
@@ -18,50 +64,109 @@ class UserModel extends Equatable {
   @JsonKey(name: 'name')
   final String name;
 
-  @JsonKey(name: 'email')
-  final String email;
+  @JsonKey(name: 'subscription_type')
+  final SubscriptionPlanModel subscriptionType;
 
   @JsonKey(name: 'photo_url')
   final String? photoUrl;
 
-  @JsonKey(name: 'subscription_type_id')
-  final int subscriptionTypeId;
+  const UserBaseModel({
+    required this.id,
+    required this.username,
+    required this.name,
+    required this.subscriptionType,
+    this.photoUrl,
+  });
+
+  factory UserBaseModel.fromJson(Map<String, dynamic> json) => _$UserBaseModelFromJson(json);
+  Map<String, dynamic> toJson() => _$UserBaseModelToJson(this);
+
+  @override
+  List<Object?> get props => [id, username, name, subscriptionType, photoUrl];
+}
+
+// Matches PrivateUser in FastAPI (Current logged-in user)
+@JsonSerializable()
+class PrivateUserModel extends UserBaseModel {
+  @JsonKey(name: 'email')
+  final String email;
 
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
-  const UserModel({
-    required this.id,
-    required this.username,
-    required this.name,
+  const PrivateUserModel({
+    required super.id,
+    required super.username,
+    required super.name,
+    required super.subscriptionType,
+    super.photoUrl,
     required this.email,
-    this.photoUrl,
-    required this.subscriptionTypeId,
     required this.createdAt,
   });
 
-  // Factory constructor for generating a new instance from a JSON map
-  factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
-
-  // Method for converting the instance to a JSON map
-  Map<String, dynamic> toJson() => _$UserModelToJson(this);
+  factory PrivateUserModel.fromJson(Map<String, dynamic> json) => _$PrivateUserModelFromJson(json);
 
   @override
-  List<Object?> get props => [
-    id,
-    username,
-    name,
-    email,
-    photoUrl,
-    subscriptionTypeId,
-    createdAt,
-  ];
+  Map<String, dynamic> toJson() => _$PrivateUserModelToJson(this);
+
+  @override
+  List<Object?> get props => [...super.props, email, createdAt];
+}
+
+// Matches SocialUser in FastAPI (Users in lists, search, feeds)
+@JsonSerializable()
+class SocialUserModel extends UserBaseModel {
+  @JsonKey(name: 'relationship')
+  final UserRelationshipModel? relationship;
+
+  const SocialUserModel({
+    required super.id,
+    required super.username,
+    required super.name,
+    required super.subscriptionType,
+    super.photoUrl,
+    this.relationship,
+  });
+
+  factory SocialUserModel.fromJson(Map<String, dynamic> json) => _$SocialUserModelFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$SocialUserModelToJson(this);
+
+  @override
+  List<Object?> get props => [...super.props, relationship];
+}
+
+// Matches UserProfile in FastAPI (Full profile view)
+@JsonSerializable()
+class UserProfileModel extends SocialUserModel {
+  @JsonKey(name: 'stats')
+  final UserStatsModel stats;
+
+  const UserProfileModel({
+    required super.id,
+    required super.username,
+    required super.name,
+    required super.subscriptionType,
+    super.photoUrl,
+    super.relationship,
+    required this.stats,
+  });
+
+  factory UserProfileModel.fromJson(Map<String, dynamic> json) => _$UserProfileModelFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$UserProfileModelToJson(this);
+
+  @override
+  List<Object?> get props => [...super.props, stats];
 }
 
 // ==========================================
-// USER CREATE MODEL
-// Matches UserCreate in FastAPI (Registration)
+// 3. REQUEST MODELS
 // ==========================================
+
+// Matches UserCreate in FastAPI (Registration)
 @JsonSerializable()
 class UserCreateModel extends Equatable {
   @JsonKey(name: 'username')
@@ -94,11 +199,7 @@ class UserCreateModel extends Equatable {
   List<Object?> get props => [username, name, email, password, photoUrl];
 }
 
-// ==========================================
-// USER UPDATE MODEL
 // Matches UserUpdate in FastAPI (PATCH request)
-// ==========================================
-// includeIfNull: false ensures we don't send null fields to the backend
 @JsonSerializable(includeIfNull: false)
 class UserUpdateModel extends Equatable {
   @JsonKey(name: 'username')
@@ -125,73 +226,4 @@ class UserUpdateModel extends Equatable {
 
   @override
   List<Object?> get props => [username, name, photoUrl, password];
-}
-
-// ==========================================
-// USER COMPACT MODEL
-// Matches UserCompact in FastAPI
-// ==========================================
-@JsonSerializable()
-class UserCompactModel extends Equatable {
-  @JsonKey(name: 'id')
-  final int id;
-
-  @JsonKey(name: 'username')
-  final String username;
-
-  @JsonKey(name: 'name')
-  final String name;
-
-  @JsonKey(name: 'photo_url')
-  final String? photoUrl;
-
-  const UserCompactModel({
-    required this.id,
-    required this.username,
-    required this.name,
-    this.photoUrl,
-  });
-
-  factory UserCompactModel.fromJson(Map<String, dynamic> json) => _$UserCompactModelFromJson(json);
-  Map<String, dynamic> toJson() => _$UserCompactModelToJson(this);
-
-  @override
-  List<Object?> get props => [id, username, name, photoUrl];
-}
-
-// ==========================================
-// USER PROFILE MODEL
-// Matches UserProfile in FastAPI
-// ==========================================
-@JsonSerializable()
-class UserProfileModel extends Equatable {
-  @JsonKey(name: 'user')
-  final UserCompactModel user;
-
-  @JsonKey(name: 'followers_count')
-  final int followersCount;
-
-  @JsonKey(name: 'following_count')
-  final int followingCount;
-
-  @JsonKey(name: 'is_followed_by_me', defaultValue: false)
-  final bool isFollowedByMe;
-
-  const UserProfileModel({
-    required this.user,
-    required this.followersCount,
-    required this.followingCount,
-    required this.isFollowedByMe,
-  });
-
-  factory UserProfileModel.fromJson(Map<String, dynamic> json) => _$UserProfileModelFromJson(json);
-  Map<String, dynamic> toJson() => _$UserProfileModelToJson(this);
-
-  @override
-  List<Object?> get props => [
-    user,
-    followersCount,
-    followingCount,
-    isFollowedByMe,
-  ];
 }

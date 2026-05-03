@@ -28,13 +28,11 @@ class CompactFeedGiftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final gift = sharedGift.gift;
 
     // --- BUTTON STATE LOGIC ---
     final isOwner = sharedGift.owner.id == currentUserId;
-
-    final isAvailable = sharedGift.bookedBy == null;
-    final isBookedByMe = sharedGift.bookedBy == currentUserId;
+    final isAvailable = sharedGift.bookedByUserId == null;
+    final isBookedByMe = sharedGift.bookedByUserId == currentUserId;
     final isBookedByOther = !isAvailable && !isBookedByMe;
 
     return Card(
@@ -57,7 +55,7 @@ class CompactFeedGiftCard extends StatelessWidget {
               ),
               // We delegate all URL checking, loading, and error states to our wrapper
               child: AppCachedNetworkImage(
-                imageUrl: gift.photoUrl,
+                imageUrl: sharedGift.photoUrl,
                 fallbackWidget: Icon(
                   Icons.card_giftcard,
                   size: 32,
@@ -99,7 +97,7 @@ class CompactFeedGiftCard extends StatelessWidget {
 
                   // Gift name
                   Text(
-                    gift.name,
+                    sharedGift.name,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
@@ -111,7 +109,7 @@ class CompactFeedGiftCard extends StatelessWidget {
 
                   // Gift price
                   Text(
-                    '\$${gift.priceUsd.toStringAsFixed(2)}',
+                    '\$${sharedGift.priceUsd.toStringAsFixed(2)}',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w600,

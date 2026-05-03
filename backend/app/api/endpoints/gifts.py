@@ -1,144 +1,115 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app import crud, schemas
+from app import crud
 from app.models.models import User
 from app.api.dependencies import get_db, get_current_user
 from app.core.file_manager import save_upload_file
 
-# Initialize the router for gift-related endpoints
+from app.schemas.gift import GiftCreate, GiftUpdate, SharedGift
+
+from app.services import gift as gift_service
+from app.services import wishlist as wishlist_service
+
+# Initialize the router
 router = APIRouter(prefix="/gifts", tags=["Gifts"])
+
 
 # ==========================================
 # GIFTS ENDPOINTS
 # ==========================================
-@router.post("/", response_model=schemas.gift.GiftResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post("/", response_model=SharedGift, status_code=status.HTTP_201_CREATED)
 async def create_new_gift(
-        gift_in: schemas.gift.GiftCreate,
+        gift_in: GiftCreate,
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
     """
     Creates a new gift.
-    Verifies that the user owns the wishlist before adding the gift to it.
     """
-    # 1. Check if the wishlist exists and belongs to the user
-    wishlist = await crud.wishlist.get_wishlist(db=db, wishlist_id=gift_in.wishlist_id)  # type: ignore
+    await wishlist_service.get_owned_wishlist_or_404(db, gift_in.wishlist_id, current_user.id)
 
-    if not wishlist:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wishlist not found")
-
-    if wishlist.owner_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only add gifts to your own wishlists"
-        )
-
-    # 2. Create the gift using the CRUD layer
+    # 1. Create the gift
     new_gift = await crud.gift.create_gift(db=db, gift_in=gift_in)
-    return new_gift
+
+    # 2. Fetch the gift again via get_gift so SQLAlchemy eagerly loads relationships (e.g., tags).
+    # Without this, Pydantic might raise a MissingGreenlet exception when trying to read the tags.
+    full_gift = await crud.gift.get_gift(db=db, gift_id=new_gift.id)
+
+    # 3. Dynamically attach the owner to the ORM object.
+    # Pydantic will read this attribute automatically due to from_attributes=True.
+    full_gift.owner = current_user
+
+    return full_gift
 
 
-@router.post("/{gift_id}/photo", response_model=schemas.gift.GiftResponse)
+@router.post("/{gift_id}/photo", response_model=SharedGift)
 async def upload_gift_photo(
-    gift_id: int,
-    file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+        gift_id: int,
+        file: UploadFile = File(...),
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user)
 ):
     """
     Uploads a photo for a specific gift.
-    Includes a security check to ensure the user owns the parent wishlist.
     """
-    # 1. Fetch the existing gift from the database
-    gift = await crud.gift.get_gift(db=db, gift_id=gift_id)
-    if not gift:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Gift not found"
-        )
+    gift = await gift_service.verify_gift_ownership(db, gift_id, current_user.id)
 
-    # 2. Security Check: Verify the current user owns the wishlist
-    wishlist = await crud.wishlist.get_wishlist(db=db, wishlist_id=int(gift.wishlist_id))  # type: ignore
-    if not wishlist or wishlist.owner_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions to modify this gift"
-        )
-
-    # 3. Save the uploaded file to the 'gifts' subfolder
     photo_url = save_upload_file(file, subfolder="gifts")
+    gift_update_data = GiftUpdate(photo_url=photo_url)
 
-    # 4. Construct the Pydantic update schema dynamically
-    gift_update_data = schemas.gift.GiftUpdate(photo_url=photo_url)
+    updated_gift = await crud.gift.update_gift(db=db, db_gift=gift, gift_in=gift_update_data)
 
-    # 5. Apply the update using your DRY and reusable CRUD function
-    updated_gift = await crud.gift.update_gift(
-        db=db,
-        db_gift=gift,
-        gift_in=gift_update_data
-    )
+    # Load relationships for Pydantic validation
+    full_gift = await crud.gift.get_gift(db, updated_gift.id)
 
-    return updated_gift
+    # Attach owner dynamically
+    full_gift.owner = current_user
+
+    return full_gift
 
 
-@router.get("/{gift_id}", response_model=schemas.gift.GiftResponse)
+@router.get("/{gift_id}", response_model=SharedGift)
 async def read_gift(
         gift_id: int,
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
-    """
-    Retrieves a specific gift based on strict privacy rules:
-    1. The owner sees their own gifts regardless of visibility.
-    2. Other users can only see the gift if both the wishlist and the gift are visible.
-    """
-    # 1. Fetch the gift from the database
-    gift = await crud.gift.get_gift(db=db, gift_id=gift_id)
-    if not gift:
+    db_gift = await crud.gift.get_shared_gift(db=db, gift_id=gift_id)
+
+    if not db_gift:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gift not found")
 
-    # 2. Fetch the parent wishlist to check ownership and visibility
-    wishlist = await crud.wishlist.get_wishlist(db=db, wishlist_id=int(gift.wishlist_id))  # type: ignore
+    owner = db_gift.wishlist.owner
 
-    if not wishlist:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wishlist not found")
+    if owner.id != current_user.id:
+        if not db_gift.wishlist.is_visible or not db_gift.is_visible:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gift not found")
 
-    # 3. Access Rule A: The owner can always view their own gifts
-    if wishlist.owner_id == current_user.id:
-        return gift
-
-    # 4. Access Rule B: Check visibility flags for non-owners
-    # If the wishlist or the specific gift is hidden, we pretend it doesn't exist (404)
-    if not wishlist.is_visible or not gift.is_visible:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gift not found")
-
-    # If all checks pass, return the gift safely
-    return gift
+    return db_gift
 
 
-@router.patch("/{gift_id}", response_model=schemas.gift.GiftResponse)
+@router.patch("/{gift_id}", response_model=SharedGift)
 async def update_existing_gift(
         gift_id: int,
-        gift_in: schemas.gift.GiftUpdate,
+        gift_in: GiftUpdate,
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
     """
     Updates an existing gift.
-    Ensures the user owns the wishlist associated with this gift.
     """
-    gift = await crud.gift.get_gift(db=db, gift_id=gift_id)
-    if not gift:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gift not found")
-
-    # Security check: verify wishlist ownership
-    wishlist = await crud.wishlist.get_wishlist(db=db, wishlist_id=int(gift.wishlist_id))  # type: ignore
-    if not wishlist or wishlist.owner_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
-
+    gift = await gift_service.verify_gift_ownership(db, gift_id, current_user.id)
     updated_gift = await crud.gift.update_gift(db=db, db_gift=gift, gift_in=gift_in)
-    return updated_gift
+
+    # Load relationships
+    full_gift = await crud.gift.get_gift(db, updated_gift.id)
+
+    # Attach owner dynamically
+    full_gift.owner = current_user
+
+    return full_gift
 
 
 @router.delete("/{gift_id}")
@@ -149,17 +120,8 @@ async def delete_existing_gift(
 ):
     """
     Deletes a gift.
-    Ensures the user owns the wishlist associated with this gift before deletion.
     """
-    gift = await crud.gift.get_gift(db=db, gift_id=gift_id)
-    if not gift:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gift not found")
-
-    # Security check: verify wishlist ownership
-    wishlist = await crud.wishlist.get_wishlist(db=db, wishlist_id=int(gift.wishlist_id))  # type: ignore
-    if not wishlist or wishlist.owner_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
-
-    await crud.gift.delete_gift(db=db, gift_id=gift_id)
+    gift = await gift_service.verify_gift_ownership(db, gift_id, current_user.id)
+    await crud.gift.delete_gift(db=db, gift_id=gift.id)
 
     return {"status": "success", "message": "Gift successfully deleted"}

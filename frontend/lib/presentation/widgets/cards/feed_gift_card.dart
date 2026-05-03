@@ -24,11 +24,10 @@ class FeedGiftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final gift = feedItem.gift;
 
     // --- BUTTON STATE LOGIC ---
-    final isAvailable = feedItem.bookedBy == null;
-    final isBookedByMe = feedItem.bookedBy == currentUserId;
+    final isAvailable = feedItem.bookedByUserId == null;
+    final isBookedByMe = feedItem.bookedByUserId == currentUserId;
     final isBookedByOther = !isAvailable && !isBookedByMe;
 
     return Card(
@@ -66,7 +65,7 @@ class FeedGiftCard extends StatelessWidget {
               ),
               // Delegate all image loading, caching, and fallback logic to our wrapper
               child: AppCachedNetworkImage(
-                imageUrl: gift.photoUrl,
+                imageUrl: feedItem.photoUrl,
                 fallbackWidget: Icon(
                   Icons.card_giftcard,
                   size: 64,
@@ -87,14 +86,14 @@ class FeedGiftCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        gift.name,
+                        feedItem.name,
                         style: theme.textTheme.titleMedium,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '\$${gift.priceUsd.toStringAsFixed(2)}',
+                        '\$${feedItem.priceUsd.toStringAsFixed(2)}',
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: theme.colorScheme.primary,
                           fontWeight: FontWeight.bold,

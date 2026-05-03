@@ -17,6 +17,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
   BookingBloc(this._bookingRepository, this._talker) : super(BookingInitial()) {
     on<LoadMyBookings>(_onLoadMyBookings);
+    on<RefreshMyBookings>(_onRefreshMyBookings);
     on<BookGift>(_onBookGift);
     on<UnbookGift>(_onUnbookGift);
   }
@@ -26,21 +27,30 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       LoadMyBookings event,
       Emitter<BookingState> emit,
       ) async {
-    // Only emit loading state if it's NOT a silent refresh
-    if (!event.isRefresh) {
-      emit(BookingsListLoading());
-    }
+    emit(BookingsListLoading());
+    await _fetchMyBookings(emit);
+  }
 
+  // Handle silent refresh of my bookings
+  Future<void> _onRefreshMyBookings(
+      RefreshMyBookings event,
+      Emitter<BookingState> emit,
+      ) async {
+    await _fetchMyBookings(emit);
+  }
+
+  // Extracted helper for fetching bookings
+  Future<void> _fetchMyBookings(Emitter<BookingState> emit) async {
     try {
-      final bookings = await _bookingRepository.getMyBookings();
-      emit(BookingsListLoaded(bookings: bookings));
+      final bookingsList = await _bookingRepository.getMyBookings();
+      emit(BookingsListLoaded(bookings: bookingsList));
     } on DioException catch (e, st) {
       _talker.handle(e, st);
       final errorMsg = ApiErrorParser.extractMessage(e);
       emit(BookingError(message: errorMsg));
     } catch (e, st) {
       _talker.handle(e, st);
-      emit(const BookingError(message: 'An unexpected error occurred.'));
+      emit(const BookingError(message: 'An unexpected error occurred while loading bookings.'));
     }
   }
 
@@ -49,7 +59,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       BookGift event,
       Emitter<BookingState> emit,
       ) async {
-    emit(BookingLoading(giftId: event.giftId));
+    emit(BookingGiftLoading(giftId: event.giftId));
     try {
       await _bookingRepository.bookGift(event.giftId);
       // Notify UI about the successful booking
@@ -60,7 +70,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       emit(BookingError(message: errorMsg));
     } catch (e, st) {
       _talker.handle(e, st);
-      emit(const BookingError(message: 'An unexpected error occurred.'));
+      emit(const BookingError(message: 'An unexpected error occurred while booking.'));
     }
   }
 
@@ -69,7 +79,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       UnbookGift event,
       Emitter<BookingState> emit,
       ) async {
-    emit(BookingLoading(giftId: event.giftId));
+    emit(BookingGiftLoading(giftId: event.giftId));
     try {
       await _bookingRepository.unbookGift(event.giftId);
       // Notify UI about the successful unbooking
@@ -80,7 +90,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       emit(BookingError(message: errorMsg));
     } catch (e, st) {
       _talker.handle(e, st);
-      emit(const BookingError(message: 'An unexpected error occurred.'));
+      emit(const BookingError(message: 'An unexpected error occurred while unbooking.'));
     }
   }
 }

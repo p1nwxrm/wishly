@@ -16,12 +16,12 @@ class GiftLoading extends GiftState {}
 
 // State showing the successfully loaded details of a gift
 class GiftLoaded extends GiftState {
-  final GiftModel gift;
+  final SharedGiftModel sharedGift;
 
-  const GiftLoaded({required this.gift});
+  const GiftLoaded({required this.sharedGift});
 
   @override
-  List<Object?> get props => [gift];
+  List<Object?> get props => [sharedGift];
 }
 
 // State indicating a successful mutation (create, update, delete)

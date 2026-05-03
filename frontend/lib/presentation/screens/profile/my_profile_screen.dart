@@ -12,6 +12,7 @@ import '../../../data/models/wishlist_models.dart';
 import '../../blocs/blocs.dart';
 import '../../utils/app_snackbars.dart';
 import '../../widgets/profile/profile.dart';
+import '../../widgets/lists/lists.dart';
 import '../../widgets/bottom_sheets/bottom_sheets.dart';
 
 @RoutePage()
@@ -27,17 +28,23 @@ class MyProfileScreen extends StatefulWidget implements AutoRouteWrapper {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider<ProfileBloc>(
+        BlocProvider<MyProfileBloc>(
           create: (context) {
-            final bloc = getIt<ProfileBloc>();
+            final bloc = getIt<MyProfileBloc>();
             if (username.isNotEmpty) {
-              bloc.add(LoadProfile(username: username));
+              bloc.add(LoadMyProfile(username: username));
             }
             return bloc;
           },
         ),
         BlocProvider<WishlistBloc>(
-          create: (context) => getIt<WishlistBloc>()..add(const LoadMyWishlists()),
+          create: (context) {
+            final bloc = getIt<WishlistBloc>();
+            if (username.isNotEmpty) {
+              bloc.add(LoadUserWishlists(username: username));
+            }
+            return bloc;
+          },
         ),
       ],
       child: this,
@@ -50,7 +57,6 @@ class MyProfileScreen extends StatefulWidget implements AutoRouteWrapper {
 
 class _MyProfileScreenState extends State<MyProfileScreen>
     with AutoRouteAwareStateMixin<MyProfileScreen>, SingleTickerProviderStateMixin {
-
   late TabController _tabController;
 
   @override
@@ -71,9 +77,10 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   void _refreshData() {
     final userState = context.read<UserBloc>().state;
     if (userState is UserLoaded) {
-      context.read<ProfileBloc>().add(LoadProfile(username: userState.user.username));
-      context.read<WishlistBloc>().add(const LoadMyWishlists(isRefresh: true));
-      context.read<BookingBloc>().add(LoadMyBookings(isRefresh: true));
+      final username = userState.user.username;
+      context.read<MyProfileBloc>().add(RefreshMyProfile(username: username));
+      context.read<WishlistBloc>().add(RefreshUserWishlists(username: username));
+      context.read<BookingBloc>().add(RefreshMyBookings());
     }
   }
 
@@ -86,7 +93,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
   Widget build(BuildContext context) {
     final userState = context.read<UserBloc>().state;
 
-    // If user data is not loaded yet, show a loading indicator
+    // Show a loading indicator if user data is not loaded yet
     if (userState is! UserLoaded) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -97,47 +104,44 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     final currentUser = userState.user;
     final currentUserId = currentUser.id;
 
-    // BlocListener listens to global navigation events (e.g., double tap on a tab)
+    // BlocListener for global navigation events (e.g., double tap on a tab)
     return BlocListener<TabRefreshCubit, int?>(
       bloc: getIt<TabRefreshCubit>(),
       listener: (context, state) {
-        // If the tab index is 2 (our profile), forcefully refresh all screen data
+        // If the tab index is 2 (profile tab), forcefully refresh all data
         if (state == 2) {
           _refreshData();
         }
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Добавлена глобальная тема
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         floatingActionButton: _tabController.index == 0
             ? Builder(
-            builder: (ctx) {
-              return FloatingActionButton(
-                onPressed: () {
-                  // Show the bottom sheet to create a new wishlist
-                  showModalBottomSheet(
-                    context: ctx,
-                    isScrollControlled: true,
-                    // Pass the current WishlistBloc into the bottom sheet so it can dispatch events
-                    builder: (_) => BlocProvider.value(
-                      value: ctx.read<WishlistBloc>(),
-                      child: const AddWishlistBottomSheet(),
-                    ),
-                  );
-                },
-                child: const Icon(Icons.add),
-              );
-            }
+          builder: (ctx) {
+            return FloatingActionButton(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: ctx,
+                  isScrollControlled: true,
+                  // Pass the current WishlistBloc into the bottom sheet so it can dispatch events
+                  builder: (_) => BlocProvider.value(
+                    value: ctx.read<WishlistBloc>(),
+                    child: const AddWishlistBottomSheet(),
+                  ),
+                );
+              },
+              child: const Icon(Icons.add),
+            );
+          },
         )
             : null,
-        // Render content based on the ProfileBloc state
-        body: BlocBuilder<ProfileBloc, ProfileState>(
+        body: BlocBuilder<MyProfileBloc, MyProfileState>(
           builder: (context, state) {
-            if (state is ProfileLoading) {
+            if (state is MyProfileLoading) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            // Handle profile loading error with a retry button
-            if (state is ProfileError) {
+            if (state is MyProfileError) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -148,7 +152,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
-                        context.read<ProfileBloc>().add(LoadProfile(username: currentUser.username));
+                        context.read<MyProfileBloc>().add(LoadMyProfile(username: currentUser.username));
                       },
                       child: const Text('Retry'),
                     ),
@@ -157,36 +161,29 @@ class _MyProfileScreenState extends State<MyProfileScreen>
               );
             }
 
-            // Successful load: build the profile header and tabs
-            if (state is ProfileLoaded) {
+            if (state is MyProfileLoaded) {
               final theme = Theme.of(context);
               final profile = state.profile;
 
               return Column(
                 children: [
-                  // Header component (avatar, statistics)
                   ProfileHeaderWidget(
                     profile: profile,
                     currentUserId: currentUserId,
-                    // Navigation to the followers list
                     onFollowersTap: () async {
                       await context.router.push(ConnectionsRoute(
-                          userId: currentUserId,
-                          username: profile.user.username,
-                          initialTab: 0
+                        username: profile.username,
+                        initialTab: 0,
                       ));
 
-                      // Refresh profile on return in case data has changed
                       if (context.mounted) {
                         _refreshData();
                       }
                     },
-                    // Navigation to the following list
                     onFollowingTap: () async {
                       await context.router.push(ConnectionsRoute(
-                          userId: currentUserId,
-                          username: profile.user.username,
-                          initialTab: 1
+                        username: profile.username,
+                        initialTab: 1,
                       ));
 
                       if (context.mounted) {
@@ -203,7 +200,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  // TODO: logic for transition to EditProfileScreen
+                                  // TODO: Logic for transition to EditProfileScreen
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.secondarySurfaceColor,
@@ -224,7 +221,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  // Copy username and show a success snackbar
                                   Clipboard.setData(ClipboardData(text: '@${currentUser.username}'));
                                   AppSnackbars.showSuccess(context, 'Username copied to clipboard!');
                                 },
@@ -250,7 +246,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () {
-                              // Dialog to confirm logging out of the account
                               showDialog(
                                 context: context,
                                 builder: (BuildContext dialogContext) {
@@ -265,7 +260,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                                       TextButton(
                                         onPressed: () {
                                           Navigator.of(dialogContext).pop();
-                                          // Dispatch session expired event to AuthBloc
                                           getIt<AuthBloc>().add(SessionExpired());
                                         },
                                         style: TextButton.styleFrom(
@@ -297,7 +291,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Tab bar switches
                   TabBar(
                     controller: _tabController,
                     indicatorColor: theme.colorScheme.primary,
@@ -309,7 +302,6 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                       Tab(text: 'Booked Gifts'),
                     ],
                   ),
-                  // Tab contents (passing currentUserId)
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
@@ -332,43 +324,36 @@ class _MyProfileScreenState extends State<MyProfileScreen>
 }
 
 // ============================================================================
-// StatelessWidget for the My Wishlist Tab
+// _WishlistsTab
 // ============================================================================
 class _WishlistsTab extends StatelessWidget {
   final int currentUserId;
 
   const _WishlistsTab({required this.currentUserId});
 
-  // --------------------------------------------------------------------------
-  // Extracted Action Methods
-  // --------------------------------------------------------------------------
-
-  /// Dispatches an event to refresh the wishlists data
   void _refreshWishlists(BuildContext context) {
-    context.read<WishlistBloc>().add(const LoadMyWishlists(isRefresh: true));
+    final userState = context.read<UserBloc>().state;
+    if (userState is UserLoaded) {
+      context.read<WishlistBloc>().add(RefreshUserWishlists(username: userState.user.username));
+    }
   }
 
-  /// Navigates to the detailed view of a specific wishlist
-  Future<void> _navigateToDetails(BuildContext context, WishlistModel wishlist) async {
-    // Wait for the details screen to pop
+  Future<void> _navigateToDetails(BuildContext context, WishlistBaseModel wishlist) async {
     await context.router.push(WishlistDetailsRoute(wishlistId: wishlist.id));
 
-    // Refresh wishlists when coming back to the profile
     if (context.mounted) {
       _refreshWishlists(context);
     }
   }
 
-  /// Toggles the visibility status (public/private) of a wishlist
-  void _toggleVisibility(BuildContext context, WishlistModel wishlist) {
+  void _toggleVisibility(BuildContext context, WishlistBaseModel wishlist) {
     final updatedModel = WishlistUpdateModel(isVisible: !wishlist.isVisible);
     context.read<WishlistBloc>().add(
       UpdateWishlist(wishlistId: wishlist.id, updateModel: updatedModel),
     );
   }
 
-  /// Shows a confirmation dialog before deleting a wishlist
-  void _showDeleteConfirmationDialog(BuildContext context, WishlistModel wishlist) {
+  void _showDeleteConfirmationDialog(BuildContext context, WishlistBaseModel wishlist) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -384,9 +369,7 @@ class _WishlistsTab extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                // Close the dialog first
                 Navigator.of(dialogContext).pop();
-                // Dispatch the delete event to the Bloc
                 context.read<WishlistBloc>().add(DeleteWishlist(wishlistId: wishlist.id));
               },
               style: TextButton.styleFrom(
@@ -400,42 +383,31 @@ class _WishlistsTab extends StatelessWidget {
     );
   }
 
-  // --------------------------------------------------------------------------
-  // Build Method
-  // --------------------------------------------------------------------------
-
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<WishlistBloc, WishlistState>(
       listener: (context, state) {
-        // Show success snackbar and refresh the list upon successful actions
         if (state is WishlistActionSuccess) {
           AppSnackbars.showSuccess(context, state.message);
           _refreshWishlists(context);
-        }
-        // Show error snackbar if an action fails
-        else if (state is WishlistError) {
+        } else if (state is WishlistError) {
           AppSnackbars.showError(context, state.message);
         }
       },
-      // Rebuild the UI strictly for states associated with displaying the list.
       buildWhen: (previous, current) {
         return current is WishlistLoading ||
-            current is WishlistsListLoaded ||
+            current is UserWishlistsLoaded ||
             current is WishlistError;
       },
       builder: (context, state) {
-        // 1. Loading State
         if (state is WishlistLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // 2. Success State: Render the list of wishlists
-        if (state is WishlistsListLoaded) {
+        if (state is UserWishlistsLoaded) {
           return WishlistsListWidget(
-            wishlists: state.wishlists,
+            userWishlistsData: state.data,
             currentUserId: currentUserId,
-            // Using the extracted clean callbacks
             onRefresh: () async => _refreshWishlists(context),
             onWishlistTap: (wishlist) => _navigateToDetails(context, wishlist),
             onToggleVisibility: (wishlist) => _toggleVisibility(context, wishlist),
@@ -443,7 +415,6 @@ class _WishlistsTab extends StatelessWidget {
           );
         }
 
-        // 3. Error State
         if (state is WishlistError) {
           return Center(
             child: Text(
@@ -454,7 +425,6 @@ class _WishlistsTab extends StatelessWidget {
           );
         }
 
-        // 4. Fallback (Empty state)
         return const Center(child: CircularProgressIndicator());
       },
     );
@@ -462,30 +432,33 @@ class _WishlistsTab extends StatelessWidget {
 }
 
 // ============================================================================
-// StatelessWidget for the Booked Gifts Tab
+// _BookedGiftsTab
 // ============================================================================
-class _BookedGiftsTab extends StatelessWidget {
+class _BookedGiftsTab extends StatefulWidget {
   final int currentUserId;
 
   const _BookedGiftsTab({required this.currentUserId});
 
-  // --------------------------------------------------------------------------
-  // Extracted Action Methods
-  // --------------------------------------------------------------------------
+  @override
+  State<_BookedGiftsTab> createState() => _BookedGiftsTabState();
+}
 
-  /// Dispatches an event to refresh the booked gifts data
+class _BookedGiftsTabState extends State<_BookedGiftsTab> {
+  /// A set of gift IDs that are currently in a loading state (e.g., being unbooked).
+  final Set<int> _loadingGiftIds = {};
+
   void _refreshBookings(BuildContext context) {
-    context.read<BookingBloc>().add(LoadMyBookings(isRefresh: true));
+    context.read<BookingBloc>().add(RefreshMyBookings());
   }
 
-  /// Dispatches the event to cancel a booked gift
   void _unbookGift(BuildContext context, SharedGiftModel sharedGift) {
-    context.read<BookingBloc>().add(UnbookGift(giftId: sharedGift.gift.id));
+    // Prevent duplicate requests if this specific gift is already processing
+    if (_loadingGiftIds.contains(sharedGift.id)) return;
+    context.read<BookingBloc>().add(UnbookGift(giftId: sharedGift.id));
   }
 
-  /// Attempts to open the external URL linked to the gift
   Future<void> _openExternalLink(BuildContext context, SharedGiftModel sharedGift) async {
-    final link = sharedGift.gift.linkUrl;
+    final link = sharedGift.linkUrl;
     if (link != null && link.isNotEmpty) {
       final url = Uri.parse(link);
       if (await canLaunchUrl(url)) {
@@ -498,14 +471,17 @@ class _BookedGiftsTab extends StatelessWidget {
     }
   }
 
-  /// Shows a confirmation dialog before cancelling a booking
-  void _showUnbookConfirmationDialog(BuildContext context, SharedGiftModel sharedGift, {VoidCallback? onConfirm}) {
+  void _showUnbookConfirmationDialog(
+      BuildContext context,
+      SharedGiftModel sharedGift,
+      {VoidCallback? onConfirm}
+      ) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Cancel Booking'),
-          content: Text('Are you sure you want to cancel your booking for "${sharedGift.gift.name}"?'),
+          content: Text('Are you sure you want to cancel your booking for "${sharedGift.name}"?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
@@ -513,14 +489,11 @@ class _BookedGiftsTab extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                // Close the alert dialog
                 Navigator.of(dialogContext).pop();
 
-                // Execute optional additional confirmation logic (e.g., closing a bottom sheet)
                 if (onConfirm != null) {
                   onConfirm();
                 } else {
-                  // If no additional logic, just unbook directly
                   _unbookGift(context, sharedGift);
                 }
               },
@@ -535,7 +508,6 @@ class _BookedGiftsTab extends StatelessWidget {
     );
   }
 
-  /// Shows a bottom sheet with detailed information about the booked gift
   Future<void> _showGiftDetailsBottomSheet(BuildContext context, SharedGiftModel sharedGift) async {
     await showModalBottomSheet(
       context: context,
@@ -546,88 +518,73 @@ class _BookedGiftsTab extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        // Provide the existing BookingBloc to the bottom sheet's context
         return BlocProvider.value(
           value: context.read<BookingBloc>(),
           child: DetailedGiftBottomSheet(
             sharedGift: sharedGift,
-            currentUserId: currentUserId,
-            // Action to unbook from inside the bottom sheet
+            currentUserId: widget.currentUserId,
             onBookToggle: () {
               _showUnbookConfirmationDialog(
-                  ctx,
-                  sharedGift,
-                  onConfirm: () {
-                    // Close the bottom sheet first, then dispatch the unbook event
-                    Navigator.of(ctx).pop();
-                    _unbookGift(context, sharedGift);
-                  }
+                ctx,
+                sharedGift,
+                onConfirm: () {
+                  Navigator.of(ctx).pop();
+                  _unbookGift(context, sharedGift);
+                },
               );
             },
-            // Action to open the gift link
             onOpenLink: () => _openExternalLink(ctx, sharedGift),
           ),
         );
       },
     );
 
-    // Refresh bookings when the bottom sheet is closed
     if (context.mounted) {
       _refreshBookings(context);
     }
   }
 
-  // --------------------------------------------------------------------------
-  // Build Method
-  // --------------------------------------------------------------------------
-
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<BookingBloc, BookingState>(
       listener: (context, state) {
-        // Show success snackbar and refresh the list upon successful actions
-        if (state is BookingActionSuccess) {
+        // Handle individual gift loading state
+        if (state is BookingGiftLoading) {
+          setState(() => _loadingGiftIds.add(state.giftId));
+        }
+        // Handle successful booking action
+        else if (state is BookingActionSuccess) {
+          setState(() => _loadingGiftIds.clear());
           AppSnackbars.showSuccess(context, state.message);
           _refreshBookings(context);
         }
-        // Show error snackbar if an action fails
+        // Handle error and ensure loading state is cleared
         else if (state is BookingError) {
+          setState(() => _loadingGiftIds.clear());
           AppSnackbars.showError(context, state.message);
         }
       },
-      // Filter states to prevent unnecessary rebuilds during action events.
       buildWhen: (previous, current) {
         return current is BookingsListLoading ||
             current is BookingsListLoaded ||
             current is BookingError;
       },
       builder: (context, state) {
-        // 1. Loading State
         if (state is BookingsListLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // 2. Success State: Render the list of booked gifts
         if (state is BookingsListLoaded) {
-          if (state.bookings.isEmpty) {
-            return const Center(
-              child: Text(
-                'No booked gifts found',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-            );
-          }
-
           return BookedGiftsListWidget(
             bookedGifts: state.bookings,
-            currentUserId: currentUserId,
+            currentUserId: widget.currentUserId,
+            loadingGiftIds: _loadingGiftIds,
             onRefresh: () async => _refreshBookings(context),
             onDetailsTap: (sharedGift) => _showGiftDetailsBottomSheet(context, sharedGift),
-            onUnbook: (sharedGift) => _showUnbookConfirmationDialog(context, sharedGift),
+            onBookToggle: (sharedGift) => _showUnbookConfirmationDialog(context, sharedGift),
           );
         }
 
-        // 3. Error State
         if (state is BookingError) {
           return Center(
             child: Text(
@@ -638,7 +595,6 @@ class _BookedGiftsTab extends StatelessWidget {
           );
         }
 
-        // 4. Fallback (Empty state)
         return const Center(child: CircularProgressIndicator());
       },
     );

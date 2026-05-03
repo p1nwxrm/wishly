@@ -1,7 +1,9 @@
-from typing import Sequence
+from typing import Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
-from app.models.models import Gift
+from sqlalchemy.orm import selectinload
+
+from app.models.models import Gift, GiftTag, Wishlist, User
 from app.schemas.gift import GiftCreate, GiftUpdate
 
 # ==========================================
@@ -9,67 +11,94 @@ from app.schemas.gift import GiftCreate, GiftUpdate
 # ==========================================
 
 async def create_gift(db: AsyncSession, gift_in: GiftCreate) -> Gift:
-	"""
-	Creates a new gift entry in the database.
-	The wishlist_id must be provided inside the gift_in payload.
-	"""
-	# Convert the Pydantic schema into a standard Python dictionary
-	gift_data = gift_in.model_dump()
+    """
+        Creates a new gift entry in the database.
+        The wishlist_id is provided inside the gift_in payload.
+        """
+    gift_data = gift_in.model_dump()
+    db_gift = Gift(**gift_data)
 
-	# Initialize the SQLAlchemy model with the unpacked dictionary data
-	db_gift = Gift(**gift_data)
+    db.add(db_gift)
+    await db.commit()
+    await db.refresh(db_gift)
 
-	# Add the new object to the session and commit the transaction to MySQL
-	db.add(db_gift)
-	await db.commit()
-
-	# Refresh retrieves the newly generated ID and created_at timestamp
-	await db.refresh(db_gift)
-
-	return db_gift
+    return db_gift
 
 
-async def get_gift(db: AsyncSession, gift_id: int) -> Gift | None:
-	"""
-	Retrieves a single gift by its primary key ID.
-	Returns None if the gift does not exist.
-	"""
-	stmt = select(Gift).where(Gift.id == gift_id)
-	result = await db.execute(stmt)
+async def get_gift(db: AsyncSession, gift_id: int) -> Optional[Gift]:
+    """
+    Retrieves a single gift by its primary key ID.
+    Eagerly loads related 'booking_info' and 'gift_tags' to allow
+    Pydantic's from_attributes=True to parse the full model.
+    """
+    stmt = (
+        select(Gift)
+        .where(Gift.id == gift_id)
+        .options(
+            # Eager load the booking relationship (One-to-One)
+            selectinload(Gift.booking_info),
+            # Eager load the association model, and then the actual tags
+            selectinload(Gift.gift_tags).selectinload(GiftTag.tag)
+        )
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
 
-	# scalar_one_or_none() is perfect here because an ID is always unique
-	return result.scalar_one_or_none()
+
+async def get_shared_gift(db: AsyncSession, gift_id: int) -> Optional[Gift]:
+    """
+    Retrieves a single gift along with its owner data.
+    Returns a dictionary structured perfectly for the SharedGift Pydantic schema.
+    """
+    stmt = (
+       select(Gift)
+       .where(Gift.id == gift_id)
+       .options(
+          # 1. Load the gift's own data
+          selectinload(Gift.booking_info),
+          selectinload(Gift.gift_tags).selectinload(GiftTag.tag),
+
+          # 2. Chain relationships up to the owner
+          # Eager load: wishlist -> wishlist owner -> owner's subscription type
+          selectinload(Gift.wishlist)
+          .selectinload(Wishlist.owner)
+          .selectinload(User.subscription_type)
+       )
+    )
+    result = await db.execute(stmt)
+    db_shared_gift = result.scalar_one_or_none()
+
+    if not db_shared_gift:
+        return None
+
+    return db_shared_gift
 
 
 async def update_gift(db: AsyncSession, db_gift: Gift, gift_in: GiftUpdate) -> Gift:
-	"""
-	Updates an existing gift.
-	Only modifies the fields that were explicitly sent in the request body.
-	"""
-	# exclude_unset=True ensures we only update fields the user actually provided,
-	# preventing accidental overwrites with None values.
-	update_data = gift_in.model_dump(exclude_unset=True)
+    """
+        Updates an existing gift dynamically.
+        Excludes unset values to prevent overwriting with None.
+        """
+    update_data = gift_in.model_dump(exclude_unset=True)
 
-	# Iterate through the provided fields and update the SQLAlchemy model dynamically
-	for field, value in update_data.items():
-		setattr(db_gift, field, value)
+    for field, value in update_data.items():
+        setattr(db_gift, field, value)
 
-	db.add(db_gift)
-	await db.commit()
-	await db.refresh(db_gift)
+    db.add(db_gift)
+    await db.commit()
+    await db.refresh(db_gift)
 
-	return db_gift
+    return db_gift
 
 
 async def delete_gift(db: AsyncSession, gift_id: int) -> bool:
-	"""
-	Deletes a gift from the database.
-	Due to the ON DELETE CASCADE constraint in our models, this will also
-	automatically remove any associated bookings and gift tags.
-	"""
-	stmt = delete(Gift).where(Gift.id == gift_id)
-	result = await db.execute(stmt)
-	await db.commit()
+    """
+        Deletes a gift from the database.
+        Due to ON DELETE CASCADE, associated bookings and gift tags
+        are automatically removed by MySQL.
+        """
+    stmt = delete(Gift).where(Gift.id == gift_id)
+    result = await db.execute(stmt)
+    await db.commit()
 
-	# rowcount indicates how many rows were successfully deleted (1 or 0)
-	return result.rowcount > 0
+    return result.rowcount > 0

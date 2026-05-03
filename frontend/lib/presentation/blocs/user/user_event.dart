@@ -8,12 +8,9 @@ abstract class UserEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-// Event to load the currently authenticated user's profile
-class LoadCurrentUser extends UserEvent {}
-
-// Event to instantly load the user profile using pre-fetched data
+// Event to instantly load the user profile using pre-fetched data from AuthBloc
 class PreloadUser extends UserEvent {
-  final UserModel user;
+  final PrivateUserModel user;
 
   const PreloadUser({required this.user});
 
@@ -21,15 +18,8 @@ class PreloadUser extends UserEvent {
   List<Object> get props => [user];
 }
 
-// Event to load a specific user's profile by their ID
-class LoadUserById extends UserEvent {
-  final int userId;
-
-  const LoadUserById({required this.userId});
-
-  @override
-  List<Object?> get props => [userId];
-}
+// Event to refresh the current user info
+class RefreshCurrentUser extends UserEvent {}
 
 // Event to update the current user's profile
 class UpdateCurrentUser extends UserEvent {

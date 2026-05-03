@@ -1,19 +1,20 @@
-from . import user
-from . import gift
-from . import wishlist
-from . import tag
+from . import auth
 from . import booking
-from . import subscription
-from . import feed
+from . import composites
+from . import connections
+from . import gift
+from . import user
+from . import wishlist
 
-# Define __all__ to explicitly declare the public API of the core package.
-# This tells other developers (and IDEs) exactly what is safe to import.
+# ==========================================
+# PUBLIC API DEFINITION
+# ==========================================
 __all__ = [
-    "user",
+	"auth",
+	"booking",
+	"composites",
+	"connections",
     "gift",
+	"user",
     "wishlist",
-    "tag",
-    "booking",
-    "subscription",
-	"feed",
 ]

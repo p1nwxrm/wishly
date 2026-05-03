@@ -1,53 +1,100 @@
-from .booking import BookingCreate, BookingResponse
-from .gift import GiftCreate, GiftUpdate, GiftResponse, SharedGift
-from .subscription_type import SubscriptionTypeCreate, SubscriptionTypeResponse
-from .tag import TagCreate, TagUpdate, TagResponse
-from .user import UserCompact, UserCreate, UserProfile, UserUpdate, UserResponse
-from .user_subscription import UserSubscriptionCreate, UserSubscriptionResponse, UserConnection
-from .wishlist import WishlistCreate, WishlistUpdate, WishlistResponse
-from .token import Token, TokenPayload, TokenRefresh
+"""
+This module aggregates all Pydantic schemas used across the application.
+By importing them here, we provide a clean, single-point API for other modules
+(e.g., you can just use `from app import schemas` and access `schemas.UserCreate`).
+"""
 
-# Define __all__ to explicitly declare the public API of the core package.
-# This tells other developers (and IDEs) exactly what is safe to import.
+# ==========================================
+# LOOKUPS & TOKENS
+# ==========================================
+from .lookups import SubscriptionPlan
+from .token import TokenSet, TokenPayload, TokenRefresh
+
+# ==========================================
+# CORE ENTITIES (Requests & Responses)
+# ==========================================
+from .user import (
+    UserCreate,
+    UserUpdate,
+    UserStats,
+    UserRelationship,
+    UserBase,
+    PrivateUser,
+    SocialUser,
+    UserProfile,
+)
+
+from .tag import (
+    TagCreate,
+    TagUpdate,
+    Tag,
+)
+
+from .gift import (
+    GiftCreate,
+    GiftUpdate,
+    GiftBase,
+    SharedGift,
+)
+
+from .wishlist import (
+    WishlistCreate,
+    WishlistUpdate,
+    WishlistBase,
+    SharedWishlist,
+    WishlistDetails,
+)
+
+# ==========================================
+# COMPOSITES / SCREENS
+# Complex aggregated models for specific UI screens
+# ==========================================
+from .composites import (
+    UserBookings,
+    UserWishlists,
+    UserConnections,
+)
+
+# ==========================================
+# PUBLIC API DEFINITION
+# ==========================================
 __all__ = [
-    # Booking
-    "BookingCreate",
-    "BookingResponse",
+	# Lookups & Tokens
+	"SubscriptionPlan",
+	"TokenSet",
+	"TokenPayload",
+	"TokenRefresh",
 
-    # Gift
-    "GiftCreate",
-    "GiftUpdate",
-    "GiftResponse",
+	# User
+	"UserCreate",
+	"UserUpdate",
+	"UserStats",
+	"UserRelationship",
+	"UserBase",
+	"PrivateUser",
+	"SocialUser",
+	"UserProfile",
+
+	# Tag
+	"TagCreate",
+	"TagUpdate",
+	"Tag",
+
+	# Gift
+	"GiftCreate",
+	"GiftUpdate",
+	"GiftBase",
 	"SharedGift",
 
-    # Subscription Type
-    "SubscriptionTypeCreate",
-    "SubscriptionTypeResponse",
+	# Wishlist
+	"WishlistCreate",
+	"WishlistUpdate",
+	"WishlistBase",
+	"SharedWishlist",
+	"WishlistDetails",
 
-    # Tag
-    "TagCreate",
-    "TagUpdate",
-    "TagResponse",
-
-    # User
-	"UserCompact",
-    "UserCreate",
-	"UserProfile",
-    "UserUpdate",
-    "UserResponse",
-
-    # User Subscription
-    "UserSubscriptionCreate",
-    "UserSubscriptionResponse",
-	"UserConnection",
-
-    # Wishlist
-    "WishlistCreate",
-    "WishlistUpdate",
-    "WishlistResponse",
-
-    # Token
-    "Token",
-    "TokenPayload",
-    "TokenRefresh",
+	# Composites
+	"UserBookings",
+	"UserWishlists",
+	"UserConnections",
 ]

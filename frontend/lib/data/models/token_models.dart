@@ -8,7 +8,7 @@ part 'token_models.g.dart';
 // Matches Token in FastAPI
 // ==========================================
 @JsonSerializable()
-class TokenModel extends Equatable {
+class TokenSetModel extends Equatable {
   @JsonKey(name: 'access_token')
   final String accessToken;
 
@@ -18,17 +18,17 @@ class TokenModel extends Equatable {
   @JsonKey(name: 'token_type')
   final String tokenType;
 
-  const TokenModel({
+  const TokenSetModel({
     required this.accessToken,
     required this.refreshToken,
     this.tokenType = 'bearer',
   });
 
   // Factory constructor for generating a new instance from a JSON map
-  factory TokenModel.fromJson(Map<String, dynamic> json) => _$TokenModelFromJson(json);
+  factory TokenSetModel.fromJson(Map<String, dynamic> json) => _$TokenSetModelFromJson(json);
 
   // Method for converting the instance to a JSON map
-  Map<String, dynamic> toJson() => _$TokenModelToJson(this);
+  Map<String, dynamic> toJson() => _$TokenSetModelToJson(this);
 
   @override
   List<Object?> get props => [accessToken, refreshToken, tokenType];

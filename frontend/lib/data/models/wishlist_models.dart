@@ -1,55 +1,99 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+import '../models/user_models.dart';
+import '../models/gift_models.dart';
 
 part 'wishlist_models.g.dart';
 
 // ==========================================
-// WISHLIST RESPONSE MODEL
-// Matches WishlistResponse in FastAPI
+// 1. RESPONSE MODELS
 // ==========================================
+
+// Matches WishlistBase in FastAPI
 @JsonSerializable()
-class WishlistModel extends Equatable {
+class WishlistBaseModel extends Equatable {
   @JsonKey(name: 'id')
   final int id;
-
-  @JsonKey(name: 'owner_id')
-  final int ownerId;
 
   @JsonKey(name: 'title')
   final String title;
 
+  @JsonKey(name: 'gifts_count', defaultValue: 0)
+  final int giftsCount;
+
   @JsonKey(name: 'is_visible')
   final bool isVisible;
 
-  @JsonKey(name: 'gifts_count')
-  final int giftsCount;
-
-  @JsonKey(name: 'created_at')
-  final DateTime createdAt;
-
-  const WishlistModel({
+  const WishlistBaseModel({
     required this.id,
-    required this.ownerId,
     required this.title,
+    this.giftsCount = 0,
     required this.isVisible,
-    required this.giftsCount,
-    required this.createdAt,
   });
 
-  // Factory constructor for generating a new instance from a JSON map
-  factory WishlistModel.fromJson(Map<String, dynamic> json) => _$WishlistModelFromJson(json);
+  factory WishlistBaseModel.fromJson(Map<String, dynamic> json) =>
+      _$WishlistBaseModelFromJson(json);
 
-  // Method for converting the instance to a JSON map
-  Map<String, dynamic> toJson() => _$WishlistModelToJson(this);
+  Map<String, dynamic> toJson() => _$WishlistBaseModelToJson(this);
 
   @override
-  List<Object?> get props => [id, ownerId, title, isVisible, giftsCount, createdAt];
+  List<Object?> get props => [id, title, giftsCount, isVisible];
+}
+
+// Matches SharedWishlist in FastAPI
+@JsonSerializable()
+class SharedWishlistModel extends WishlistBaseModel {
+  @JsonKey(name: 'owner')
+  final SocialUserModel owner;
+
+  const SharedWishlistModel({
+    required super.id,
+    required super.title,
+    super.giftsCount = 0,
+    required super.isVisible,
+    required this.owner,
+  });
+
+  factory SharedWishlistModel.fromJson(Map<String, dynamic> json) =>
+      _$SharedWishlistModelFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$SharedWishlistModelToJson(this);
+
+  @override
+  List<Object?> get props => [...super.props, owner];
+}
+
+// Matches WishlistDetails in FastAPI
+@JsonSerializable()
+class WishlistDetailsModel extends SharedWishlistModel {
+  @JsonKey(name: 'gifts', defaultValue: [])
+  final List<GiftBaseModel> gifts;
+
+  const WishlistDetailsModel({
+    required super.id,
+    required super.title,
+    super.giftsCount = 0,
+    required super.isVisible,
+    required super.owner,
+    this.gifts = const [],
+  });
+
+  factory WishlistDetailsModel.fromJson(Map<String, dynamic> json) =>
+      _$WishlistDetailsModelFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$WishlistDetailsModelToJson(this);
+
+  @override
+  List<Object?> get props => [...super.props, gifts];
 }
 
 // ==========================================
-// WISHLIST CREATE MODEL
-// Matches WishlistCreate in FastAPI
+// 2. REQUEST MODELS
 // ==========================================
+
+// Matches WishlistCreate in FastAPI
 @JsonSerializable()
 class WishlistCreateModel extends Equatable {
   @JsonKey(name: 'title')
@@ -58,27 +102,21 @@ class WishlistCreateModel extends Equatable {
   @JsonKey(name: 'is_visible')
   final bool isVisible;
 
-  @JsonKey(name: 'owner_id')
-  final int ownerId;
-
   const WishlistCreateModel({
     required this.title,
     this.isVisible = true,
-    required this.ownerId,
   });
 
-  factory WishlistCreateModel.fromJson(Map<String, dynamic> json) => _$WishlistCreateModelFromJson(json);
+  factory WishlistCreateModel.fromJson(Map<String, dynamic> json) =>
+      _$WishlistCreateModelFromJson(json);
+
   Map<String, dynamic> toJson() => _$WishlistCreateModelToJson(this);
 
   @override
-  List<Object?> get props => [title, isVisible, ownerId];
+  List<Object?> get props => [title, isVisible];
 }
 
-// ==========================================
-// WISHLIST UPDATE MODEL
 // Matches WishlistUpdate in FastAPI (PATCH request)
-// ==========================================
-// includeIfNull: false ensures we don't send null fields to the backend
 @JsonSerializable(includeIfNull: false)
 class WishlistUpdateModel extends Equatable {
   @JsonKey(name: 'title')
@@ -92,7 +130,9 @@ class WishlistUpdateModel extends Equatable {
     this.isVisible,
   });
 
-  factory WishlistUpdateModel.fromJson(Map<String, dynamic> json) => _$WishlistUpdateModelFromJson(json);
+  factory WishlistUpdateModel.fromJson(Map<String, dynamic> json) =>
+      _$WishlistUpdateModelFromJson(json);
+
   Map<String, dynamic> toJson() => _$WishlistUpdateModelToJson(this);
 
   @override

@@ -71,6 +71,7 @@ class WishlyApp extends StatelessWidget {
         BlocProvider<UserBloc>(create: (context) => getIt<UserBloc>()),
         BlocProvider<BookingBloc>(create: (context) => getIt<BookingBloc>()),
         BlocProvider<FeedBloc>(create: (context) => getIt<FeedBloc>()),
+        BlocProvider<MyProfileBloc>(create: (context) => getIt<MyProfileBloc>()),
       ],
       child: MaterialApp.router(
         title: 'Wishlist App',
@@ -90,9 +91,7 @@ class WishlyApp extends StatelessWidget {
             listener: (context, state) {
               if (state is AuthSuccess) {
                 // 1. Preload user data into the global UserBloc
-                if (state.user != null) {
-                  context.read<UserBloc>().add(PreloadUser(user: state.user!));
-                }
+                context.read<UserBloc>().add(PreloadUser(user: state.user));
 
                 // 2. Globally redirect to the main application
                 appRouter.replaceAll([const RootRoute()]);

@@ -71,7 +71,7 @@ class AuthInterceptor extends Interceptor {
         );
 
         // 3. Parse the response using our strongly-typed TokenModel
-        final newTokens = TokenModel.fromJson(refreshResponse.data);
+        final newTokens = TokenSetModel.fromJson(refreshResponse.data);
 
         // 4. Save the new tokens back to secure storage
         await storage.saveAccessToken(newTokens.accessToken);

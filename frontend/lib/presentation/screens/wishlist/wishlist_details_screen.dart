@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../data/models/gift_models.dart';
+import '../../../data/models/user_models.dart';
 import '../../blocs/blocs.dart';
 import '../../utils/app_snackbars.dart';
 import '../../widgets/bottom_sheets/bottom_sheets.dart';
@@ -43,7 +44,7 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
 
   /// Refreshes the wishlist details.
   Future<void> _onRefresh(BuildContext context) async {
-    context.read<WishlistBloc>().add(LoadWishlistDetails(wishlistId: wishlistId, isRefresh: true));
+    context.read<WishlistBloc>().add(RefreshWishlistDetails(wishlistId: wishlistId));
   }
 
   /// Retries loading the wishlist details when an error occurs.
@@ -52,8 +53,8 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
   }
 
   /// Toggles the booking status of a gift.
-  void _handleBookToggle(BuildContext context, int giftId, int? bookedById, int currentUserId) {
-    final isBookedByMe = bookedById == currentUserId;
+  void _handleBookToggle(BuildContext context, int giftId, int? bookedByUserId, int currentUserId) {
+    final isBookedByMe = bookedByUserId == currentUserId;
 
     if (isBookedByMe) {
       context.read<BookingBloc>().add(UnbookGift(giftId: giftId));
@@ -106,13 +107,13 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
   }
 
   /// Shows an AlertDialog to confirm the deletion of a gift.
-  void _confirmDeleteGift(BuildContext context, SharedGiftModel sharedGift) {
+  void _confirmDeleteGift(BuildContext context, SharedGiftModel sharedGift, {BuildContext? bottomSheetContext}) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Delete Gift'),
-          content: Text('Are you sure you want to delete "${sharedGift.gift.name}"? This action cannot be undone.'),
+          content: Text('Are you sure you want to delete "${sharedGift.name}"? This action cannot be undone.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
@@ -121,7 +122,10 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                context.read<GiftBloc>().add(DeleteGift(giftId: sharedGift.gift.id));
+                if (bottomSheetContext != null && bottomSheetContext.mounted) {
+                  Navigator.of(bottomSheetContext).pop();
+                }
+                context.read<GiftBloc>().add(DeleteGift(giftId: sharedGift.id));
               },
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.error,
@@ -131,6 +135,22 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
           ],
         );
       },
+    );
+  }
+
+  /// Helper to convert a Base gift to a Shared gift by appending the owner
+  SharedGiftModel _mapBaseToShared(GiftBaseModel baseGift, SocialUserModel owner) {
+    return SharedGiftModel(
+      id: baseGift.id,
+      name: baseGift.name,
+      priceUsd: baseGift.priceUsd,
+      photoUrl: baseGift.photoUrl,
+      linkUrl: baseGift.linkUrl,
+      isVisible: baseGift.isVisible,
+      bookedByUserId: baseGift.bookedByUserId,
+      tags: baseGift.tags,
+      description: baseGift.description,
+      owner: owner,
     );
   }
 
@@ -162,53 +182,46 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
             BlocProvider.value(value: bookingBloc),
           ],
           child: BlocBuilder<WishlistBloc, WishlistState>(
-            builder: (context, wishlistState) {
+            builder: (wishlistCtx, wishlistState) {
               SharedGiftModel latestGift = initialGift;
 
-              // Extract the latest gift data from the Wishlist details state
               if (wishlistState is WishlistDetailsLoaded) {
                 try {
-                  latestGift = wishlistState.gifts.firstWhere(
-                        (g) => g.gift.id == initialGift.gift.id,
+                  final updatedBaseGift = wishlistState.wishlistDetails.gifts.firstWhere(
+                        (g) => g.id == initialGift.id,
                   );
+                  latestGift = _mapBaseToShared(updatedBaseGift, latestGift.owner);
                 } catch (_) {}
               }
 
               return BlocBuilder<GiftBloc, GiftState>(
-                builder: (context, giftState) {
-                  // If the gift is being updated/loaded via GiftBloc, override the local model
-                  if (giftState is GiftLoaded && giftState.gift.id == latestGift.gift.id) {
-                    latestGift = SharedGiftModel(
-                      gift: giftState.gift,
-                      owner: latestGift.owner,
-                      bookedBy: latestGift.bookedBy,
-                      isMutualSubscription: latestGift.isMutualSubscription,
-                    );
+                builder: (giftCtx, giftState) {
+                  if (giftState is GiftLoaded && giftState.sharedGift.id == latestGift.id) {
+                    latestGift = _mapBaseToShared(giftState.sharedGift, latestGift.owner);
                   }
 
-                  // Wrap DetailedGiftBottomSheet in BookingBloc Builder to react to loading states
                   return BlocBuilder<BookingBloc, BookingState>(
-                    builder: (context, detailedBookingState) {
-                      // Determine the loading state based purely on BookingBloc matching this gift ID
-                      final isBookingLoading = detailedBookingState is BookingLoading &&
-                          detailedBookingState.giftId == latestGift.gift.id;
+                    builder: (bookingCtx, detailedBookingState) {
+                      final isBookingLoading = detailedBookingState is BookingGiftLoading &&
+                          detailedBookingState.giftId == latestGift.id;
 
                       return DetailedGiftBottomSheet(
                         sharedGift: latestGift,
                         currentUserId: currentUserId,
                         isLoading: isBookingLoading,
+                        // Use the outer 'context' for all Bloc events
                         onToggleVisibility: isOwner
-                            ? () => _handleToggleVisibility(context, latestGift.gift.id, latestGift.gift.isVisible)
+                            ? () => _handleToggleVisibility(context, latestGift.id, latestGift.isVisible)
                             : null,
                         onDelete: isOwner
                             ? () {
-                          Navigator.of(context).pop();
-                          _confirmDeleteGift(context, latestGift);
+                          // Pass the stable outer screen 'context' to the dialog
+                          _confirmDeleteGift(context, latestGift, bottomSheetContext: bottomSheetContext);
                         }
                             : null,
-                        onOpenLink: () => _handleOpenExternalLink(context, latestGift.gift.linkUrl),
+                        onOpenLink: () => _handleOpenExternalLink(context, latestGift.linkUrl),
                         onBookToggle: !isOwner
-                            ? () => _handleBookToggle(context, latestGift.gift.id, latestGift.bookedBy, currentUserId)
+                            ? () => _handleBookToggle(context, latestGift.id, latestGift.bookedByUserId, currentUserId)
                             : null,
                       );
                     },
@@ -298,8 +311,9 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
 
           // Success Loaded State
           if (state is WishlistDetailsLoaded) {
-            final wishlist = state.wishlist;
-            final gifts = state.gifts;
+            final details = state.wishlistDetails;
+            final owner = details.owner;
+            final baseGifts = details.gifts;
 
             // Wait for user state to load to establish ownership permissions
             final userState = context.read<UserBloc>().state;
@@ -310,13 +324,11 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
             }
 
             final int currentUserId = userState.user.id;
-            final String currentUsername = userState.user.username;
-            final isOwner = wishlist.ownerId == currentUserId;
+            final isOwner = owner.id == currentUserId;
+            final ownerUsername = owner.username;
 
-            // Get the username for the AppBar
-            final ownerUsername = isOwner
-                ? currentUsername
-                : (gifts.isNotEmpty ? gifts.first.owner.username : 'owner');
+            // Map all GiftBaseModels to SharedGiftModels dynamically using the owner info
+            final sharedGifts = baseGifts.map((bg) => _mapBaseToShared(bg, owner)).toList();
 
             return Scaffold(
               appBar: AppBar(
@@ -329,7 +341,7 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
                     children: [
                       Flexible(
                         child: Text(
-                          '"${wishlist.title}',
+                          '"${details.title}',
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -344,7 +356,7 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
               ),
               body: RefreshIndicator(
                 onRefresh: () => _onRefresh(context),
-                child: gifts.isEmpty
+                child: sharedGifts.isEmpty
                     ? Center(
                   child: Text(
                     isOwner ? 'Your wishlist is empty.\nAdd some gifts!' : 'This wishlist is empty.',
@@ -353,15 +365,15 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
                 )
                     : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                  itemCount: gifts.length,
+                  itemCount: sharedGifts.length,
                   itemBuilder: (context, index) {
-                    final sharedGift = gifts[index];
+                    final sharedGift = sharedGifts[index];
 
                     // Wrap the card in a BlocBuilder to listen to BookingBloc state changes
                     return BlocBuilder<BookingBloc, BookingState>(
                       builder: (context, bookingState) {
                         // Check if the current booking action is loading and matches this specific gift ID
-                        final isBookingLoading = bookingState is BookingLoading && bookingState.giftId == sharedGift.gift.id;
+                        final isBookingLoading = bookingState is BookingGiftLoading && bookingState.giftId == sharedGift.id;
 
                         return CompactFeedGiftCard(
                           sharedGift: sharedGift,
@@ -378,7 +390,7 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
                               ? () => _confirmDeleteGift(context, sharedGift)
                               : null,
                           onBookToggle: !isOwner
-                              ? () => _handleBookToggle(context, sharedGift.gift.id, sharedGift.bookedBy, currentUserId)
+                              ? () => _handleBookToggle(context, sharedGift.id, sharedGift.bookedByUserId, currentUserId)
                               : null,
                         );
                       },

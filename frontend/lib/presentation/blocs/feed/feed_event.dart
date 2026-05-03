@@ -1,6 +1,5 @@
 part of 'feed_bloc.dart';
 
-// Base event class for the feed
 abstract class FeedEvent extends Equatable {
   const FeedEvent();
 
@@ -8,20 +7,11 @@ abstract class FeedEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-// Event to load or refresh the feed with optional pagination
-class LoadFeed extends FeedEvent {
-  final int skip;
-  final int limit;
+// 1. Initial load (shows full-screen spinner)
+class LoadInitialFeed extends FeedEvent {}
 
-  // Flag for silent refresh (without showing the loading spinner)
-  final bool isRefresh;
+// 2. Pull-to-refresh (silent reload, resets pagination)
+class RefreshFeed extends FeedEvent {}
 
-  const LoadFeed({
-    this.skip = 0,
-    this.limit = 20,
-    this.isRefresh = false,
-  });
-
-  @override
-  List<Object?> get props => [skip, limit, isRefresh];
-}
+// 3. Pagination (loads next page and appends to existing list)
+class LoadMoreFeed extends FeedEvent {}

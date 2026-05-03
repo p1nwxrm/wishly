@@ -9,14 +9,10 @@ abstract class BookingEvent extends Equatable {
 }
 
 // Event to fetch the list of gifts booked by the current user
-class LoadMyBookings extends BookingEvent {
-  final bool isRefresh;
+class LoadMyBookings extends BookingEvent {}
 
-  const LoadMyBookings({this.isRefresh = false});
-
-  @override
-  List<Object?> get props => [isRefresh];
-}
+// Event to silently refresh the list of gifts booked by the current user
+class RefreshMyBookings extends BookingEvent {}
 
 // Event to book a specific gift
 class BookGift extends BookingEvent {

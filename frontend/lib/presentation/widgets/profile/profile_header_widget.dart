@@ -21,8 +21,7 @@ class ProfileHeaderWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final user = profile.user;
-    final isMyProfile = user.id == currentUserId;
+    final isMyProfile = profile.id == currentUserId;
 
     // SafeArea ensures the content doesn't overlap with the device's status bar
     return SafeArea(
@@ -36,7 +35,7 @@ class ProfileHeaderWidget extends StatelessWidget {
             if (isMyProfile) ...[
               Center(
                 child: Text(
-                  user.username,
+                  profile.username,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 22,
@@ -54,7 +53,7 @@ class ProfileHeaderWidget extends StatelessWidget {
                 // Larger Avatar
                 UserAvatar(
                   radius: 46,
-                  photoUrl: user.photoUrl,
+                  photoUrl: profile.photoUrl,
                 ),
                 const SizedBox(width: 24),
 
@@ -65,12 +64,12 @@ class ProfileHeaderWidget extends StatelessWidget {
                     children: [
                       ProfileStatColumn(
                         label: 'Followers',
-                        count: profile.followersCount,
+                        count: profile.stats.followersCount,
                         onTap: onFollowersTap,
                       ),
                       ProfileStatColumn(
                         label: 'Following',
-                        count: profile.followingCount,
+                        count: profile.stats.followingCount,
                         onTap: onFollowingTap,
                       ),
                     ],
@@ -82,7 +81,7 @@ class ProfileHeaderWidget extends StatelessWidget {
 
             // 3. Bio Section: Display Name (Left-aligned)
             Text(
-              user.name,
+              profile.name,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 fontSize: 15,

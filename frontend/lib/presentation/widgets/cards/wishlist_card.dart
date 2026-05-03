@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/models/wishlist_models.dart';
 
 class WishlistCard extends StatelessWidget {
-  final WishlistModel wishlist;
+  final SharedWishlistModel wishlist;
   final int currentUserId;
 
   final VoidCallback onTap;
@@ -21,7 +21,9 @@ class WishlistCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isOwner = wishlist.ownerId == currentUserId;
+
+    // --- BUTTON STATE LOGIC ---
+    final isOwner = wishlist.owner.id == currentUserId;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -79,7 +81,6 @@ class WishlistCard extends StatelessWidget {
                         color: wishlist.isVisible ? theme.colorScheme.primary : theme.colorScheme.error,
                       ),
                       onPressed: onToggleVisibility,
-                      // Removed extra padding and constraints for a tighter UI fit
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),

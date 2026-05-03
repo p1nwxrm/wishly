@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import '../models/wishlist_models.dart';
-import '../models/gift_models.dart';
+import '../models/composite_models.dart';
 
 // Repository for handling wishlist-related network requests
 class WishlistRepository {
@@ -10,79 +10,50 @@ class WishlistRepository {
   WishlistRepository(this._dio);
 
   // Create a new wishlist
-  Future<WishlistModel> createWishlist(WishlistCreateModel wishlistModel) async {
+  Future<WishlistBaseModel> createWishlist(WishlistCreateModel wishlistModel) async {
     try {
       final response = await _dio.post(
         '/wishlists/',
         data: wishlistModel.toJson(),
       );
 
-      // Convert the JSON response back into a strongly-typed model
-      return WishlistModel.fromJson(response.data);
+      return WishlistBaseModel.fromJson(response.data);
     } catch (e) {
       rethrow;
     }
   }
 
-  // Retrieve all wishlists for the currently logged-in user
-  Future<List<WishlistModel>> getMyWishlists() async {
+  // Retrieve user profile and all their visible wishlists
+  Future<UserWishlistsModel> getUserWishlists(String username) async {
     try {
-      final response = await _dio.get('/wishlists/me');
-
-      // Map the incoming JSON list to a List of WishlistModel objects
-      return (response.data as List)
-          .map((json) => WishlistModel.fromJson(json))
-          .toList();
+      final response = await _dio.get('/wishlists/user/$username');
+      return UserWishlistsModel.fromJson(response.data);
     } catch (e) {
       rethrow;
     }
   }
 
-  // Retrieve a specific wishlist by its ID
-  Future<WishlistModel> getWishlistById(int wishlistId) async {
-    try {
-      final response = await _dio.get('/wishlists/$wishlistId');
-      return WishlistModel.fromJson(response.data);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  // Retrieve all visible wishlists for a specific user
-  Future<List<WishlistModel>> getUserWishlists(int userId) async {
-    try {
-      final response = await _dio.get('/wishlists/user/$userId');
-
-      return (response.data as List)
-          .map((json) => WishlistModel.fromJson(json))
-          .toList();
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  // Retrieve all gifts belonging to a specific wishlist
-  Future<List<SharedGiftModel>> getWishlistGifts(int wishlistId) async {
+  // Retrieve full details of a specific wishlist, including its gifts
+  Future<WishlistDetailsModel> getWishlistGifts(int wishlistId) async {
     try {
       final response = await _dio.get('/wishlists/$wishlistId/gifts');
 
-      return (response.data as List)
-          .map((json) => SharedGiftModel.fromJson(json))
-          .toList();
+      return WishlistDetailsModel.fromJson(response.data);
     } catch (e) {
       rethrow;
     }
   }
 
   // Update an existing wishlist (title or visibility)
-  Future<WishlistModel> updateWishlist(int wishlistId, WishlistUpdateModel updateModel) async {
+  Future<WishlistBaseModel> updateWishlist(int wishlistId, WishlistUpdateModel updateModel) async {
     try {
       final response = await _dio.patch(
         '/wishlists/$wishlistId',
         // Dio ignores null values thanks to our includeIfNull: false in the model
         data: updateModel.toJson(),
       );
-      return WishlistModel.fromJson(response.data);
+
+      return WishlistBaseModel.fromJson(response.data);
     } catch (e) {
       rethrow;
     }

@@ -6,31 +6,71 @@ part of 'wishlist_models.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-WishlistModel _$WishlistModelFromJson(Map<String, dynamic> json) =>
-    WishlistModel(
+WishlistBaseModel _$WishlistBaseModelFromJson(Map<String, dynamic> json) =>
+    WishlistBaseModel(
       id: (json['id'] as num).toInt(),
-      ownerId: (json['owner_id'] as num).toInt(),
       title: json['title'] as String,
+      giftsCount: (json['gifts_count'] as num?)?.toInt() ?? 0,
       isVisible: json['is_visible'] as bool,
-      giftsCount: (json['gifts_count'] as num).toInt(),
-      createdAt: DateTime.parse(json['created_at'] as String),
     );
 
-Map<String, dynamic> _$WishlistModelToJson(WishlistModel instance) =>
+Map<String, dynamic> _$WishlistBaseModelToJson(WishlistBaseModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'owner_id': instance.ownerId,
       'title': instance.title,
-      'is_visible': instance.isVisible,
       'gifts_count': instance.giftsCount,
-      'created_at': instance.createdAt.toIso8601String(),
+      'is_visible': instance.isVisible,
     };
+
+SharedWishlistModel _$SharedWishlistModelFromJson(Map<String, dynamic> json) =>
+    SharedWishlistModel(
+      id: (json['id'] as num).toInt(),
+      title: json['title'] as String,
+      giftsCount: (json['gifts_count'] as num?)?.toInt() ?? 0,
+      isVisible: json['is_visible'] as bool,
+      owner: SocialUserModel.fromJson(json['owner'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$SharedWishlistModelToJson(
+  SharedWishlistModel instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'title': instance.title,
+  'gifts_count': instance.giftsCount,
+  'is_visible': instance.isVisible,
+  'owner': instance.owner,
+};
+
+WishlistDetailsModel _$WishlistDetailsModelFromJson(
+  Map<String, dynamic> json,
+) => WishlistDetailsModel(
+  id: (json['id'] as num).toInt(),
+  title: json['title'] as String,
+  giftsCount: (json['gifts_count'] as num?)?.toInt() ?? 0,
+  isVisible: json['is_visible'] as bool,
+  owner: SocialUserModel.fromJson(json['owner'] as Map<String, dynamic>),
+  gifts:
+      (json['gifts'] as List<dynamic>?)
+          ?.map((e) => GiftBaseModel.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
+);
+
+Map<String, dynamic> _$WishlistDetailsModelToJson(
+  WishlistDetailsModel instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'title': instance.title,
+  'gifts_count': instance.giftsCount,
+  'is_visible': instance.isVisible,
+  'owner': instance.owner,
+  'gifts': instance.gifts,
+};
 
 WishlistCreateModel _$WishlistCreateModelFromJson(Map<String, dynamic> json) =>
     WishlistCreateModel(
       title: json['title'] as String,
       isVisible: json['is_visible'] as bool? ?? true,
-      ownerId: (json['owner_id'] as num).toInt(),
     );
 
 Map<String, dynamic> _$WishlistCreateModelToJson(
@@ -38,7 +78,6 @@ Map<String, dynamic> _$WishlistCreateModelToJson(
 ) => <String, dynamic>{
   'title': instance.title,
   'is_visible': instance.isVisible,
-  'owner_id': instance.ownerId,
 };
 
 WishlistUpdateModel _$WishlistUpdateModelFromJson(Map<String, dynamic> json) =>

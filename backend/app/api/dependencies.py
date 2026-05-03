@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt, JWTError
 from pydantic import ValidationError # type: ignore
 
-# Import our project modules
 from app.db.database import AsyncSessionLocal
 from app.core.config import settings
 from app import crud, schemas
@@ -84,7 +83,7 @@ async def get_current_user(
 	if not user:
 		raise credentials_exception
 
-	# 5. THE SECURITY CHECK: Verify if the token has been revoked
+	# 5. Verify if the token has been revoked
 	if user.token_version != token_version:
 		raise HTTPException(
 			status_code=status.HTTP_401_UNAUTHORIZED,

@@ -4,7 +4,7 @@ from fastapi import FastAPI # type: ignore
 from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from fastapi.staticfiles import StaticFiles # type: ignore
 
-from app.api.router import api_router
+from app.api.main_router import api_router
 
 # Import SlowAPI components for global rate limiting
 from slowapi import _rate_limit_exceeded_handler # type: ignore

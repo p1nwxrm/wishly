@@ -10,22 +10,21 @@ class GiftRepository {
   GiftRepository(this._dio);
 
   // Create a new gift in a specific wishlist
-  Future<GiftModel> createGift(GiftCreateModel giftModel) async {
+  Future<SharedGiftModel> createGift(GiftCreateModel giftModel) async {
     try {
       final response = await _dio.post(
         '/gifts/',
         data: giftModel.toJson(),
       );
 
-      // Convert the JSON response back into a strongly-typed model
-      return GiftModel.fromJson(response.data);
+      return SharedGiftModel.fromJson(response.data);
     } catch (e) {
       rethrow;
     }
   }
 
   // Upload a photo for a specific gift
-  Future<GiftModel> uploadGiftPhoto(int giftId, File photoFile) async {
+  Future<SharedGiftModel> uploadGiftPhoto(int giftId, File photoFile) async {
     try {
       // Create FormData with the file
       final formData = FormData.fromMap({
@@ -40,31 +39,32 @@ class GiftRepository {
         data: formData,
       );
 
-      return GiftModel.fromJson(response.data);
+      return SharedGiftModel.fromJson(response.data);
     } catch (e) {
       rethrow;
     }
   }
 
   // Retrieve a specific gift by its ID
-  Future<GiftModel> getGiftById(int giftId) async {
+  Future<SharedGiftModel> getSharedGiftById(int giftId) async {
     try {
       final response = await _dio.get('/gifts/$giftId');
-      return GiftModel.fromJson(response.data);
+      return SharedGiftModel.fromJson(response.data);
     } catch (e) {
       rethrow;
     }
   }
 
   // Update an existing gift (e.g., change price, name, or visibility)
-  Future<GiftModel> updateGift(int giftId, GiftUpdateModel updateModel) async {
+  Future<SharedGiftModel> updateGift(int giftId, GiftUpdateModel updateModel) async {
     try {
       final response = await _dio.patch(
         '/gifts/$giftId',
         // Dio ignores null values thanks to includeIfNull: false in the model
         data: updateModel.toJson(),
       );
-      return GiftModel.fromJson(response.data);
+
+      return SharedGiftModel.fromJson(response.data);
     } catch (e) {
       rethrow;
     }

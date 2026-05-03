@@ -9,10 +9,10 @@ abstract class GiftEvent extends Equatable {
 }
 
 // Event to fetch details of a specific gift
-class LoadGiftDetails extends GiftEvent {
+class LoadGift extends GiftEvent {
   final int giftId;
 
-  const LoadGiftDetails({required this.giftId});
+  const LoadGift({required this.giftId});
 
   @override
   List<Object?> get props => [giftId];

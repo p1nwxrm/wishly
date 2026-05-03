@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import '../models/booking_models.dart';
 import '../models/gift_models.dart';
 
 // Repository for handling gift booking network requests
@@ -10,10 +9,9 @@ class BookingRepository {
   BookingRepository(this._dio);
 
   // Book a specific gift by its ID
-  Future<BookingModel> bookGift(int giftId) async {
+  Future<void> bookGift(int giftId) async {
     try {
-      final response = await _dio.post('/bookings/$giftId');
-      return BookingModel.fromJson(response.data);
+      await _dio.post('/bookings/$giftId');
     } catch (e) {
       rethrow;
     }
@@ -32,9 +30,9 @@ class BookingRepository {
   Future<List<SharedGiftModel>> getMyBookings() async {
     try {
       final response = await _dio.get('/bookings/me');
+      final bookingsData = response.data['bookings'] as List;
 
-      // Map the incoming JSON list to a List of BookingModel objects
-      return (response.data as List)
+      return bookingsData
           .map((json) => SharedGiftModel.fromJson(json))
           .toList();
     } catch (e) {

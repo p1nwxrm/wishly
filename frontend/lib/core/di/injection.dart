@@ -13,20 +13,32 @@ import '../router/auth_guard.dart';
 // Global instance of GetIt service locator
 final getIt = GetIt.instance;
 
-// Function to initialize all dependencies before app starts
+// Function to initialize all dependencies before the app starts
 Future<void> setupDependencies() async {
-  // 1. Logger
-  // Register Talker first so other dependencies can use it
+
+  // ==========================================
+  // 1. LOGGER
+  // ==========================================
+
+  // Register Talker first so other dependencies can use it for logging
   getIt.registerSingleton<Talker>(setupLogger());
 
-  // 2. Core Services
-  // Register SecureStorageService as a lazy singleton
-  // It will be created only once when first requested
+
+  // ==========================================
+  // 2. CORE SERVICES
+  // ==========================================
+
+  // Register SecureStorageService as a lazy singleton.
+  // It will be instantiated only once when it is first requested.
   getIt.registerLazySingleton<SecureStorageService>(
         () => SecureStorageService(),
   );
 
-  // 3. Router
+
+  // ==========================================
+  // 3. ROUTING
+  // ==========================================
+
   // Register AuthGuard injecting SecureStorageService and Talker
   getIt.registerSingleton<AuthGuard>(
     AuthGuard(getIt<SecureStorageService>(), getIt<Talker>()),
@@ -37,70 +49,73 @@ Future<void> setupDependencies() async {
     AppRouter(getIt<AuthGuard>()),
   );
 
-  // 4. Network
-  // Register ApiClient, injecting the SecureStorageService into it
-  // getIt<SecureStorageService>() automatically finds the instance we registered above
+
+  // ==========================================
+  // 4. NETWORK
+  // ==========================================
+
+  // Register ApiClient, injecting the SecureStorageService into it.
   getIt.registerLazySingleton<ApiClient>(
         () => ApiClient(
       getIt<SecureStorageService>(),
       getIt<Talker>(),
-          onUnauthorized: () {
-            // This tells the UI to kick the user out WITHOUT trying to call /users/logout on the backend.
-            getIt<AuthBloc>().add(SessionExpired());
-          },
+      onUnauthorized: () {
+        // This triggers the UI to log the user out directly
+        // without attempting a /users/logout call on the backend.
+        getIt<AuthBloc>().add(SessionExpired());
+      },
     ),
   );
 
-  // Expose the Dio instance directly for convenience
-  // Repositories will just ask for Dio, not the whole ApiClient
+  // Expose the Dio instance directly for convenience.
+  // Repositories will only require Dio, not the entire ApiClient.
   getIt.registerLazySingleton<Dio>(
         () => getIt<ApiClient>().dio,
   );
 
-  // 5. Repositories
-  // Register AuthRepository
+
+  // ==========================================
+  // 5. REPOSITORIES
+  // ==========================================
+
   getIt.registerLazySingleton<AuthRepository>(
-        () => AuthRepository(getIt<Dio>(), getIt<SecureStorageService>()),
+        () => AuthRepository(
+            getIt<Dio>(),
+            getIt<SecureStorageService>()
+        ),
   );
 
-  // Register WishlistRepository
-  getIt.registerLazySingleton<WishlistRepository>(
-        () => WishlistRepository(getIt<Dio>()),
-  );
-
-  // Register GiftRepository
-  getIt.registerLazySingleton<GiftRepository>(
-        () => GiftRepository(getIt<Dio>()),
-  );
-
-  // Register UserRepository
-  getIt.registerLazySingleton<UserRepository>(
-        () => UserRepository(getIt<Dio>()),
-  );
-
-  // Register SubscriptionRepository
-  getIt.registerLazySingleton<SubscriptionRepository>(
-        () => SubscriptionRepository(getIt<Dio>()),
-  );
-
-  // Register TagRepository
-  getIt.registerLazySingleton<TagRepository>(
-        () => TagRepository(getIt<Dio>()),
-  );
-
-  // Register BookingRepository
   getIt.registerLazySingleton<BookingRepository>(
         () => BookingRepository(getIt<Dio>()),
   );
 
-  // Register FeedRepository
-  getIt.registerLazySingleton<FeedRepository>(
-        () => FeedRepository(getIt<Dio>()),
+  getIt.registerLazySingleton<ConnectionsRepository>(
+        () => ConnectionsRepository(getIt<Dio>()),
   );
 
-  // 6. BLoCs
-  // --- SINGLETONS ---
-  // Register AuthBloc
+  // Merged Feed and Search logic into a single DiscoverRepository
+  getIt.registerLazySingleton<DiscoverRepository>(
+        () => DiscoverRepository(getIt<Dio>()),
+  );
+
+  getIt.registerLazySingleton<GiftRepository>(
+        () => GiftRepository(getIt<Dio>()),
+  );
+
+  getIt.registerLazySingleton<UserRepository>(
+        () => UserRepository(getIt<Dio>()),
+  );
+
+  getIt.registerLazySingleton<WishlistRepository>(
+        () => WishlistRepository(getIt<Dio>()),
+  );
+
+
+  // ==========================================
+  // 6. BLOCS (SINGLETONS)
+  // State that needs to persist across the app lifecycle
+  // ==========================================
+
   getIt.registerLazySingleton<AuthBloc>(
         () => AuthBloc(
       getIt<AuthRepository>(),
@@ -108,7 +123,6 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  // Register UserBloc
   getIt.registerLazySingleton<UserBloc>(
         () => UserBloc(
       getIt<UserRepository>(),
@@ -116,7 +130,6 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  // Register BookingBloc
   getIt.registerLazySingleton<BookingBloc>(
         () => BookingBloc(
       getIt<BookingRepository>(),
@@ -124,16 +137,31 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  // Register FeedBloc
   getIt.registerLazySingleton<FeedBloc>(
         () => FeedBloc(
-      getIt<FeedRepository>(),
+      getIt<DiscoverRepository>(),
       getIt<Talker>(),
     ),
   );
 
-  // --- FACTORIES ---
-  // Register WishlistBloc
+  getIt.registerLazySingleton<MyProfileBloc>(
+        () => MyProfileBloc(
+      getIt<UserRepository>(),
+      getIt<Talker>(),
+    ),
+  );
+
+  // Register TabRefreshCubit for bottom navigation tap-to-refresh logic
+  getIt.registerLazySingleton<TabRefreshCubit>(
+        () => TabRefreshCubit(),
+  );
+
+
+  // ==========================================
+  // 7. BLOCS (FACTORIES)
+  // State that is localized and needs a fresh instance per screen
+  // ==========================================
+
   getIt.registerFactory<WishlistBloc>(
         () => WishlistBloc(
       getIt<WishlistRepository>(),
@@ -141,7 +169,6 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  // Register GiftBloc
   getIt.registerFactory<GiftBloc>(
         () => GiftBloc(
       getIt<GiftRepository>(),
@@ -149,38 +176,24 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  // Register ProfileBloc
-  getIt.registerFactory<ProfileBloc>(
-        () => ProfileBloc(
+  getIt.registerFactory<PublicProfileBloc>(
+        () => PublicProfileBloc(
       getIt<UserRepository>(),
       getIt<Talker>(),
     ),
   );
 
-  // Register SubscriptionBloc
-  getIt.registerFactory<SubscriptionBloc>(
-        () => SubscriptionBloc(
-      getIt<SubscriptionRepository>(),
+  getIt.registerFactory<ConnectionBloc>(
+        () => ConnectionBloc(
+      getIt<ConnectionsRepository>(),
       getIt<Talker>(),
     ),
   );
 
-  // Register TagBloc
-  getIt.registerFactory<TagBloc>(
-        () => TagBloc(
-      getIt<TagRepository>(),
-      getIt<Talker>(),
-    ),
-  );
-
-  // Register SearchBloc
   getIt.registerFactory<SearchBloc>(
         () => SearchBloc(
-      getIt<UserRepository>(),
+      getIt<DiscoverRepository>(),
       getIt<Talker>(),
     ),
   );
-
-  // Register TabRefreshCubit for navigation
-  getIt.registerLazySingleton<TabRefreshCubit>(() => TabRefreshCubit());
 }

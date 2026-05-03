@@ -27,13 +27,13 @@ class DetailedGiftBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final gift = sharedGift.gift;
 
+    // --- BUTTON STATE LOGIC ---
     final isOwner = sharedGift.owner.id == currentUserId;
-    final isAvailable = sharedGift.bookedBy == null;
-    final isBookedByMe = sharedGift.bookedBy == currentUserId;
+    final isAvailable = sharedGift.bookedByUserId == null;
+    final isBookedByMe = sharedGift.bookedByUserId == currentUserId;
     final isBookedByOther = !isAvailable && !isBookedByMe;
-    final hasLink = gift.linkUrl != null && gift.linkUrl!.isNotEmpty;
+    final hasLink = sharedGift.linkUrl != null && sharedGift.linkUrl!.isNotEmpty;
 
     // Wrap in SingleChildScrollView for scrolling long content
     return SingleChildScrollView(
@@ -62,7 +62,7 @@ class DetailedGiftBottomSheet extends StatelessWidget {
               color: theme.colorScheme.primary.withValues(alpha: 0.1),
             ),
             child: AppCachedNetworkImage(
-              imageUrl: gift.photoUrl,
+              imageUrl: sharedGift.photoUrl,
               fallbackWidget: Icon(
                 Icons.card_giftcard,
                 size: 80,
@@ -89,13 +89,13 @@ class DetailedGiftBottomSheet extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        gift.name,
+                        sharedGift.name,
                         style: theme.textTheme.headlineMedium,
                       ),
                     ),
                     const SizedBox(width: 16),
                     Text(
-                      '\$${gift.priceUsd.toStringAsFixed(2)}',
+                      '\$${sharedGift.priceUsd.toStringAsFixed(2)}',
                       style: theme.textTheme.headlineMedium?.copyWith(
                         color: theme.colorScheme.primary,
                       ),
@@ -105,14 +105,14 @@ class DetailedGiftBottomSheet extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // Description section
-                if (gift.description != null && gift.description!.isNotEmpty) ...[
+                if (sharedGift.description != null && sharedGift.description!.isNotEmpty) ...[
                   Text(
                     'Description',
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    gift.description!,
+                    sharedGift.description!,
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 24),
@@ -127,15 +127,15 @@ class DetailedGiftBottomSheet extends StatelessWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: isLoading ? null : onToggleVisibility,
-                            icon: Icon(gift.isVisible ? Icons.visibility : Icons.visibility_off, size: 18),
+                            icon: Icon(sharedGift.isVisible ? Icons.visibility : Icons.visibility_off, size: 18),
                             label: Text(
-                              gift.isVisible ? 'Hide' : 'Show',
+                              sharedGift.isVisible ? 'Hide' : 'Show',
                               textAlign: TextAlign.center,
                             ),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: gift.isVisible ? theme.colorScheme.primary : theme.colorScheme.error,
+                              foregroundColor: sharedGift.isVisible ? theme.colorScheme.primary : theme.colorScheme.error,
                               side: BorderSide(
-                                color: gift.isVisible ? theme.colorScheme.primary : theme.colorScheme.error,
+                                color: sharedGift.isVisible ? theme.colorScheme.primary : theme.colorScheme.error,
                               ),
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                             ),

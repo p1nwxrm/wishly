@@ -8,37 +8,44 @@ abstract class WishlistEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-// Event to fetch the current user's wishlists
-class LoadMyWishlists extends WishlistEvent {
-  final bool isRefresh;
-  const LoadMyWishlists({this.isRefresh = false});
+// Event to fetch a user's wishlists (including the current logged-in user)
+class LoadUserWishlists extends WishlistEvent {
+  final String username;
+
+  const LoadUserWishlists({required this.username});
 
   @override
-  List<Object?> get props => [isRefresh];
+  List<Object?> get props => [username];
 }
 
-// Event to fetch another user's wishlists
-class LoadUserWishlists extends WishlistEvent {
-  final int userId;
+// Event to silently refresh a user's wishlists
+class RefreshUserWishlists extends WishlistEvent {
+  final String username;
 
-  const LoadUserWishlists({required this.userId});
+  const RefreshUserWishlists({required this.username});
 
   @override
-  List<Object?> get props => [userId];
+  List<Object?> get props => [username];
 }
 
 // Event to fetch a specific wishlist and its gifts
 class LoadWishlistDetails extends WishlistEvent {
   final int wishlistId;
-  final bool isRefresh;
 
-  const LoadWishlistDetails({
-    required this.wishlistId,
-    this.isRefresh = false,
-  });
+  const LoadWishlistDetails({required this.wishlistId});
 
   @override
-  List<Object?> get props => [wishlistId, isRefresh];
+  List<Object?> get props => [wishlistId];
+}
+
+// Event to silently refresh wishlist details
+class RefreshWishlistDetails extends WishlistEvent {
+  final int wishlistId;
+
+  const RefreshWishlistDetails({required this.wishlistId});
+
+  @override
+  List<Object?> get props => [wishlistId];
 }
 
 // Event to create a new wishlist

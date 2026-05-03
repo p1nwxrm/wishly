@@ -15,7 +15,6 @@ part of 'app_router.dart';
 class ConnectionsRoute extends PageRouteInfo<ConnectionsRouteArgs> {
   ConnectionsRoute({
     Key? key,
-    required int userId,
     required String username,
     int initialTab = 0,
     List<PageRouteInfo>? children,
@@ -23,7 +22,6 @@ class ConnectionsRoute extends PageRouteInfo<ConnectionsRouteArgs> {
          ConnectionsRoute.name,
          args: ConnectionsRouteArgs(
            key: key,
-           userId: userId,
            username: username,
            initialTab: initialTab,
          ),
@@ -39,7 +37,6 @@ class ConnectionsRoute extends PageRouteInfo<ConnectionsRouteArgs> {
       return WrappedRoute(
         child: ConnectionsScreen(
           key: args.key,
-          userId: args.userId,
           username: args.username,
           initialTab: args.initialTab,
         ),
@@ -51,14 +48,11 @@ class ConnectionsRoute extends PageRouteInfo<ConnectionsRouteArgs> {
 class ConnectionsRouteArgs {
   const ConnectionsRouteArgs({
     this.key,
-    required this.userId,
     required this.username,
     this.initialTab = 0,
   });
 
   final Key? key;
-
-  final int userId;
 
   final String username;
 
@@ -66,7 +60,7 @@ class ConnectionsRouteArgs {
 
   @override
   String toString() {
-    return 'ConnectionsRouteArgs{key: $key, userId: $userId, username: $username, initialTab: $initialTab}';
+    return 'ConnectionsRouteArgs{key: $key, username: $username, initialTab: $initialTab}';
   }
 
   @override
@@ -74,14 +68,12 @@ class ConnectionsRouteArgs {
     if (identical(this, other)) return true;
     if (other is! ConnectionsRouteArgs) return false;
     return key == other.key &&
-        userId == other.userId &&
         username == other.username &&
         initialTab == other.initialTab;
   }
 
   @override
-  int get hashCode =>
-      key.hashCode ^ userId.hashCode ^ username.hashCode ^ initialTab.hashCode;
+  int get hashCode => key.hashCode ^ username.hashCode ^ initialTab.hashCode;
 }
 
 /// generated route for

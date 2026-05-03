@@ -11,12 +11,12 @@ abstract class UserState extends Equatable {
 // Initial state before any actions
 class UserInitial extends UserState {}
 
-// State showing a loading indicator
+// State showing a loading indicator (e.g., during profile update)
 class UserLoading extends UserState {}
 
-// State showing the successfully loaded user profile
+// State showing the successfully loaded current user profile
 class UserLoaded extends UserState {
-  final UserModel user;
+  final PrivateUserModel user;
 
   const UserLoaded({required this.user});
 

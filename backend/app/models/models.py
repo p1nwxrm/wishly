@@ -118,6 +118,20 @@ class User(Base):
 		cascade="all, delete-orphan"
 	)
 
+	followers_count = column_property(
+		select(func.count(UserSubscription.subscriber_id))
+		.where(UserSubscription.subscribed_user_id == id)
+		.correlate_except(UserSubscription)
+		.scalar_subquery()
+	)
+
+	following_count = column_property(
+		select(func.count(UserSubscription.subscribed_user_id))
+		.where(UserSubscription.subscriber_id == id)
+		.correlate_except(UserSubscription)
+		.scalar_subquery()
+	)
+
 
 class Tag(Base):
 	__tablename__ = "tags"
@@ -136,6 +150,7 @@ class Tag(Base):
 
 class Gift(Base):
 	__tablename__ = "gifts"
+	__allow_unmapped__ = True
 
 	id: Mapped[int] = mapped_column(primary_key=True)
 	name: Mapped[str] = mapped_column(String(150))
@@ -161,6 +176,32 @@ class Gift(Base):
 	# uselist=False strictly enforces a One-to-One perspective.
 	# One gift can only have one booking record.
 	booking_info: Mapped[Optional["Booking"]] = relationship(back_populates="gift", uselist=False, cascade="all, delete-orphan")
+
+	_dynamic_owner: Optional["User"] = None
+
+	@property
+	def booked_by_user_id(self) -> Optional[int]:
+		"""Returns the user_id if the gift is booked, else None."""
+		return self.booking_info.user_id if self.booking_info else None
+
+	@property
+	def tags(self) -> List["Tag"]:
+		"""Extracts Tag objects from the GiftTag association list."""
+		return [gt.tag for gt in self.gift_tags]
+
+	@property
+	def owner(self):
+		if self._dynamic_owner is not None:
+			return self._dynamic_owner
+
+		if self.wishlist:
+			return self.wishlist.owner
+
+		return None
+
+	@owner.setter
+	def owner(self, user):
+		self._dynamic_owner = user
 
 
 class Wishlist(Base):

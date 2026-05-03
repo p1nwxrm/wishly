@@ -27,7 +27,6 @@ class LoginRequested extends AuthEvent {
 // Event triggered when the user attempts to register a new account
 class RegisterRequested extends AuthEvent {
   final UserCreateModel userModel;
-  // Optional photo file
   final File? photoFile;
 
   const RegisterRequested({

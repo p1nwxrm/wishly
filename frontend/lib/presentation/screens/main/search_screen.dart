@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:auto_route/auto_route.dart';
 
 import '../../../core/di/injection.dart';
 import '../../../core/router/app_router.dart';
-import '../../../data/models/user_subscription_models.dart';
+import '../../../data/models/user_models.dart';
 import '../../blocs/blocs.dart';
-import '../../widgets/cards/user_card.dart';
 import '../../utils/app_snackbars.dart';
+import '../../widgets/lists/user_list_view.dart';
 
 @RoutePage()
 class SearchScreen extends StatefulWidget implements AutoRouteWrapper {
@@ -21,7 +21,8 @@ class SearchScreen extends StatefulWidget implements AutoRouteWrapper {
           create: (context) => getIt<SearchBloc>(),
         ),
         BlocProvider(
-          create: (context) => getIt<SubscriptionBloc>(),
+          // Replaced SubscriptionBloc with ConnectionBloc
+          create: (context) => getIt<ConnectionBloc>(),
         ),
       ],
       child: this,
@@ -36,7 +37,8 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  final Set<int> _loadingUserIds = {};
+  // Changed to track usernames since ConnectionBloc events use targetUsername
+  final Set<String> _loadingUsernames = {};
 
   @override
   void dispose() {
@@ -77,7 +79,7 @@ class _SearchScreenState extends State<SearchScreen> {
   /// Handles changes in the search text field.
   void _handleSearchQueryChanged(String query) {
     setState(() {
-      _loadingUserIds.clear();
+      _loadingUsernames.clear();
     });
 
     // Reset the search if the field is cleared
@@ -105,65 +107,65 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   /// Navigates to a user's profile and refreshes the search upon return.
-  Future<void> _handleUserTap(UserConnectionModel userConnection) async {
+  Future<void> _handleUserTap(SocialUserModel user) async {
     // Navigate to profile on tap and wait for it to return
     await context.pushRoute(
-      OtherUserProfileRoute(username: userConnection.user.username),
+      OtherUserProfileRoute(username: user.username),
     );
 
     if (mounted) {
-      final currentQuery = _searchController.text;
-      if (currentQuery.trim().isNotEmpty) {
-        context.read<SearchBloc>().add(RefreshSearch(query: currentQuery));
-      }
+      _refreshCurrentSearch();
+    }
+  }
+
+  /// Helper to refresh the current search query
+  void _refreshCurrentSearch() {
+    final currentQuery = _searchController.text;
+    if (currentQuery.trim().isNotEmpty) {
+      context.read<SearchBloc>().add(RefreshSearch(query: currentQuery));
     }
   }
 
   /// Toggles the follow/unfollow state for a specific user.
-  void _handleFollowToggle(UserConnectionModel userConnection, int currentUserId) {
-    final targetUserId = userConnection.user.id;
+  void _handleFollowToggle(SocialUserModel user) {
+    final targetUsername = user.username;
 
     // Prevent spamming the button while the action is loading
-    if (_loadingUserIds.contains(targetUserId)) return;
+    if (_loadingUsernames.contains(targetUsername)) return;
 
     setState(() {
-      _loadingUserIds.add(targetUserId);
+      _loadingUsernames.add(targetUsername);
     });
 
-    final subBloc = context.read<SubscriptionBloc>();
+    final connectionBloc = context.read<ConnectionBloc>();
+    final isFollowing = user.relationship?.isFollowing ?? false;
 
-    if (userConnection.isFollowedByMe) {
-      subBloc.add(UnfollowUser(
-        targetUserId: targetUserId,
-        currentUserId: currentUserId,
-      ));
+    if (isFollowing) {
+      connectionBloc.add(UnfollowUser(targetUsername: targetUsername));
     } else {
-      subBloc.add(FollowUser(
-        targetUserId: targetUserId,
-        currentUserId: currentUserId,
-      ));
+      connectionBloc.add(FollowUser(targetUsername: targetUsername));
     }
   }
 
-  /// Handles the subscription state changes (success/error logic).
-  void _handleSubscriptionStateChange(BuildContext context, SubscriptionState state) {
-    if (state is SubscriptionError) {
+  /// Handles the connection state changes (success/error logic).
+  void _handleConnectionStateChange(BuildContext context, ConnectionState state) {
+    if (state is ConnectionError) {
       setState(() {
-        _loadingUserIds.clear();
+        _loadingUsernames.clear();
       });
       AppSnackbars.showError(context, state.message);
-    } else if (state is SubscriptionActionSuccess) {
+    } else if (state is FollowUserSuccess) {
       setState(() {
-        _loadingUserIds.remove(state.targetUserId);
+        _loadingUsernames.remove(state.targetUsername);
       });
-
       AppSnackbars.showSuccess(context, state.message);
-
-      // Refresh the current search query to update "isFollowedByMe" statuses
-      final currentQuery = _searchController.text;
-      if (currentQuery.trim().isNotEmpty) {
-        context.read<SearchBloc>().add(RefreshSearch(query: currentQuery));
-      }
+      _refreshCurrentSearch();
+    } else if (state is UnfollowUserSuccess) {
+      setState(() {
+        _loadingUsernames.remove(state.targetUsername);
+      });
+      AppSnackbars.showSuccess(context, state.message);
+      _refreshCurrentSearch();
     }
   }
 
@@ -187,20 +189,20 @@ class _SearchScreenState extends State<SearchScreen> {
           listener: (context, state) => _handleTabRefresh(state),
         ),
 
-        // Clear loading IDs when the search state changes
+        // Clear loading usernames when the search state changes
         BlocListener<SearchBloc, SearchState>(
           listener: (context, state) {
             if (state is SearchLoaded || state is SearchError || state is SearchInitial) {
               setState(() {
-                _loadingUserIds.clear();
+                _loadingUsernames.clear();
               });
             }
           },
         ),
 
-        // Listen for subscription actions (success or error) to show snackbars
-        BlocListener<SubscriptionBloc, SubscriptionState>(
-          listener: _handleSubscriptionStateChange,
+        // Listen for connection actions (success or error) to show snackbars
+        BlocListener<ConnectionBloc, ConnectionState>(
+          listener: _handleConnectionStateChange,
         ),
       ],
       child: Scaffold(
@@ -257,7 +259,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
                   // Loaded state
                   if (state is SearchLoaded) {
-                    final users = state.users;
+                    final users = state.users; // Assumed to be List<SocialUserModel>
 
                     if (users.isEmpty) {
                       return Center(
@@ -268,27 +270,14 @@ class _SearchScreenState extends State<SearchScreen> {
                       );
                     }
 
-                    return ListView.separated(
-                      controller: _scrollController,
-                      itemCount: users.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 12),
-                      // Add bottom padding for better scroll appearance
+                    return UserListView(
+                      users: users,
+                      currentUserId: currentUserId,
+                      loadingUsernames: _loadingUsernames,
+                      scrollController: _scrollController,
                       padding: const EdgeInsets.only(bottom: 24),
-                      itemBuilder: (context, index) {
-                        final userConnection = users[index];
-                        final isMe = currentUserId == userConnection.user.id;
-
-                        return UserCard(
-                          connection: userConnection,
-                          currentUserId: currentUserId,
-                          isLoading: _loadingUserIds.contains(userConnection.user.id),
-                          onTap: () => _handleUserTap(userConnection),
-                          // Disable follow toggle if it's the current user
-                          onFollowToggle: isMe
-                              ? null
-                              : () => _handleFollowToggle(userConnection, currentUserId),
-                        );
-                      },
+                      onUserTap: _handleUserTap,
+                      onFollowToggle: _handleFollowToggle,
                     );
                   }
 

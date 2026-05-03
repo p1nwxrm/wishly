@@ -5,17 +5,18 @@ import 'package:talker_flutter/talker_flutter.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 import '../../../core/api/api_error_parser.dart';
-import '../../../data/models/user_subscription_models.dart';
-import '../../../data/repositories/user_repository.dart';
+import '../../../data/models/user_models.dart';
+import '../../../data/repositories/discover_repository.dart';
 
 part 'search_event.dart';
 part 'search_state.dart';
 
+// Bloc responsible for managing user search functionality with debouncing
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
-  final UserRepository _userRepository;
+  final DiscoverRepository _discoverRepository;
   final Talker _talker;
 
-  SearchBloc(this._userRepository, this._talker) : super(SearchInitial()) {
+  SearchBloc(this._discoverRepository, this._talker) : super(SearchInitial()) {
     // We use transformer to debounce search requests and avoid spamming the server
     on<SearchUsers>(
       _onSearchUsers,
@@ -31,27 +32,31 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       SearchUsers event,
       Emitter<SearchState> emit,
       ) async {
-    // Backend requires at least 2 characters
-    if (event.query.length < 2) {
+    if (event.query.trim().isEmpty) {
       emit(SearchInitial());
       return;
     }
 
-    if (!event.isRefresh) {
-      emit(SearchLoading());
-    }
-
+    // Since this is a new search (typing), we show the loading indicator
+    emit(SearchLoading());
     await _fetchUsers(event.query, emit);
   }
 
-  Future<void> _onRefreshSearch(RefreshSearch event, Emitter<SearchState> emit) async {
-    if (event.query.length < 2) return;
+  Future<void> _onRefreshSearch(
+      RefreshSearch event,
+      Emitter<SearchState> emit,
+      ) async {
+    if (event.query.trim().isEmpty) return;
+
+    // For refresh, we don't emit SearchLoading() to avoid UI flicker.
+    // The previous state remains visible until the new data arrives.
     await _fetchUsers(event.query, emit);
   }
 
+  // Common helper method to fetch users and update state
   Future<void> _fetchUsers(String query, Emitter<SearchState> emit) async {
     try {
-      final users = await _userRepository.searchUsers(query);
+      final users = await _discoverRepository.searchUsers(query);
       emit(SearchLoaded(users: users));
     } on DioException catch (e, st) {
       _talker.handle(e, st);
