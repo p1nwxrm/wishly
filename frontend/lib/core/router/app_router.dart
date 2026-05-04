@@ -36,7 +36,7 @@ class AppRouter extends RootStackRouter {
     // --- Other Screens ---
     AutoRoute(
         guards: [authGuard],
-        page: OtherUserProfileRoute.page
+        page: PublicProfileRoute.page
     ),
     AutoRoute(
         guards: [authGuard],

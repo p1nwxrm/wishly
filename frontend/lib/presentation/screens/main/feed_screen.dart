@@ -92,6 +92,15 @@ class _FeedScreenState extends State<FeedScreen> {
     return 0; // Default fallback if user is not loaded
   }
 
+  /// Helper method to retrieve the currently authenticated user's username
+  String _getCurrentUsername() {
+    final userState = context.read<UserBloc>().state;
+    if (userState is UserLoaded) {
+      return userState.user.username;
+    }
+    return '';
+  }
+
   /// Triggers a silent pull-to-refresh
   Future<void> _handleRefreshFeed() async {
     context.read<FeedBloc>().add(RefreshFeed());
@@ -116,6 +125,15 @@ class _FeedScreenState extends State<FeedScreen> {
       context.read<BookingBloc>().add(UnbookGift(giftId: feedItem.id));
     } else {
       context.read<BookingBloc>().add(BookGift(giftId: feedItem.id));
+    }
+  }
+
+  /// Navigates the user to the profile of the gift owner
+  void _navigateToUserProfile(String currentUsername, String targetUsername) {
+    if (currentUsername == targetUsername) {
+      AutoTabsRouter.of(context).navigate(const MyProfileRoute());
+    } else {
+      AutoRouter.of(context).push(PublicProfileRoute(username: targetUsername));
     }
   }
 
@@ -170,6 +188,7 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currentUserId = _getCurrentUserId();
+    final currentUsername = _getCurrentUsername();
 
     // Listen for tab refresh events (e.g., user taps the active tab icon)
     return BlocListener<TabRefreshCubit, int?>(
@@ -228,6 +247,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   onRefresh: _handleRefreshFeed,
                   onDetailsTap: (feedItem) => _showDetailedGiftBottomSheet(feedItem, currentUserId, theme),
                   onBookToggle: (feedItem) => _handleBookToggle(feedItem, currentUserId),
+                  onUserTap: (feedItem) => _navigateToUserProfile(currentUsername, feedItem.owner.username),
                 );
               }
 
@@ -348,9 +368,12 @@ class FeedListView extends StatelessWidget {
   final bool hasReachedMax;
   final int currentUserId;
   final ScrollController scrollController;
+
   final Future<void> Function() onRefresh;
-  final void Function(SharedGiftModel) onDetailsTap;
-  final void Function(SharedGiftModel) onBookToggle;
+
+  final ValueChanged<SharedGiftModel> onDetailsTap;
+  final ValueChanged<SharedGiftModel> onBookToggle;
+  final ValueChanged<SharedGiftModel> onUserTap;
 
   const FeedListView({
     super.key,
@@ -361,6 +384,7 @@ class FeedListView extends StatelessWidget {
     required this.onRefresh,
     required this.onDetailsTap,
     required this.onBookToggle,
+    required this.onUserTap,
   });
 
   @override
@@ -410,6 +434,7 @@ class FeedListView extends StatelessWidget {
                 isLoading: isThisCardLoading,
                 onDetailsTap: () => onDetailsTap(feedItem),
                 onBookToggle: () => onBookToggle(feedItem),
+                onUserTap: () => onUserTap(feedItem),
               );
             },
           );

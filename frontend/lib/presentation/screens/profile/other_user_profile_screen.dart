@@ -12,10 +12,10 @@ import '../../widgets/lists/wishlists_list_widget.dart';
 import '../../widgets/common/button_loading_indicator.dart';
 
 @RoutePage()
-class OtherUserProfileScreen extends StatelessWidget implements AutoRouteWrapper {
+class PublicProfileScreen extends StatelessWidget implements AutoRouteWrapper {
   final String username;
 
-  const OtherUserProfileScreen({
+  const PublicProfileScreen({
     super.key,
     @PathParam('username') required this.username,
   });

@@ -110,7 +110,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _handleUserTap(SocialUserModel user) async {
     // Navigate to profile on tap and wait for it to return
     await context.pushRoute(
-      OtherUserProfileRoute(username: user.username),
+      PublicProfileRoute(username: user.username),
     );
 
     if (mounted) {

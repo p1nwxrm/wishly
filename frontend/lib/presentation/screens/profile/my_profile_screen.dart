@@ -24,29 +24,23 @@ class MyProfileScreen extends StatefulWidget implements AutoRouteWrapper {
     final userState = context.read<UserBloc>().state;
     final username = userState is UserLoaded ? userState.user.username : '';
 
+    // Trigger events on global Blocs that are already provided in main.dart
     context.read<BookingBloc>().add(LoadMyBookings());
 
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<MyProfileBloc>(
-          create: (context) {
-            final bloc = getIt<MyProfileBloc>();
-            if (username.isNotEmpty) {
-              bloc.add(LoadMyProfile(username: username));
-            }
-            return bloc;
-          },
-        ),
-        BlocProvider<WishlistBloc>(
-          create: (context) {
-            final bloc = getIt<WishlistBloc>();
-            if (username.isNotEmpty) {
-              bloc.add(LoadUserWishlists(username: username));
-            }
-            return bloc;
-          },
-        ),
-      ],
+    if (username.isNotEmpty) {
+      // MyProfileBloc is a global singleton provided in main.dart.
+      context.read<MyProfileBloc>().add(LoadMyProfile(username: username));
+    }
+
+    // WishlistBloc is registered as a Factory in injection.dart.
+    return BlocProvider<WishlistBloc>(
+      create: (context) {
+        final bloc = getIt<WishlistBloc>();
+        if (username.isNotEmpty) {
+          bloc.add(LoadUserWishlists(username: username));
+        }
+        return bloc;
+      },
       child: this,
     );
   }

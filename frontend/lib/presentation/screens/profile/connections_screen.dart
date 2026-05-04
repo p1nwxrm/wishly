@@ -119,7 +119,7 @@ class _ConnectionsListViewState extends State<_ConnectionsListView> {
 
   /// Handles taps on a user card.
   Future<void> _handleUserTap(SocialUserModel item) async {
-    await context.router.push(OtherUserProfileRoute(username: item.username));
+    await context.router.push(PublicProfileRoute(username: item.username));
 
     // Check if the widget is mounted after returning from the profile screen
     if (!mounted) return;

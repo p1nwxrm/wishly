@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: wishlist_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      # Maps the host port from .env to the default internal MySQL port
+      - "${DB_PORT}:3306"
+    volumes:
+      # Persists database data to prevent data loss on container restart
+      - mysql_data:/var/lib/mysql
+
+  api:
+    build: .
+    container_name: wishlist_fastapi
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      # Mounts the local directory to the container for hot-reloading
+      - .:/app
+
+volumes:
+  mysql_data:

@@ -346,7 +346,7 @@ class WishlistDetailsScreen extends StatelessWidget implements AutoRouteWrapper 
                         ),
                       ),
                       Text(
-                        '" by @$ownerUsername',
+                        isOwner ? '" by me' : '" by @$ownerUsername',
                         overflow: TextOverflow.visible,
                       ),
                     ],

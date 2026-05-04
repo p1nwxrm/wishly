@@ -109,39 +109,38 @@ class MyProfileRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [OtherUserProfileScreen]
-class OtherUserProfileRoute extends PageRouteInfo<OtherUserProfileRouteArgs> {
-  OtherUserProfileRoute({
+/// [PublicProfileScreen]
+class PublicProfileRoute extends PageRouteInfo<PublicProfileRouteArgs> {
+  PublicProfileRoute({
     Key? key,
     required String username,
     List<PageRouteInfo>? children,
   }) : super(
-         OtherUserProfileRoute.name,
-         args: OtherUserProfileRouteArgs(key: key, username: username),
+         PublicProfileRoute.name,
+         args: PublicProfileRouteArgs(key: key, username: username),
          rawPathParams: {'username': username},
          initialChildren: children,
        );
 
-  static const String name = 'OtherUserProfileRoute';
+  static const String name = 'PublicProfileRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
       final pathParams = data.inheritedPathParams;
-      final args = data.argsAs<OtherUserProfileRouteArgs>(
-        orElse: () => OtherUserProfileRouteArgs(
-          username: pathParams.getString('username'),
-        ),
+      final args = data.argsAs<PublicProfileRouteArgs>(
+        orElse: () =>
+            PublicProfileRouteArgs(username: pathParams.getString('username')),
       );
       return WrappedRoute(
-        child: OtherUserProfileScreen(key: args.key, username: args.username),
+        child: PublicProfileScreen(key: args.key, username: args.username),
       );
     },
   );
 }
 
-class OtherUserProfileRouteArgs {
-  const OtherUserProfileRouteArgs({this.key, required this.username});
+class PublicProfileRouteArgs {
+  const PublicProfileRouteArgs({this.key, required this.username});
 
   final Key? key;
 
@@ -149,13 +148,13 @@ class OtherUserProfileRouteArgs {
 
   @override
   String toString() {
-    return 'OtherUserProfileRouteArgs{key: $key, username: $username}';
+    return 'PublicProfileRouteArgs{key: $key, username: $username}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! OtherUserProfileRouteArgs) return false;
+    if (other is! PublicProfileRouteArgs) return false;
     return key == other.key && username == other.username;
   }
 

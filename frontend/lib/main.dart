@@ -97,8 +97,19 @@ class WishlyApp extends StatelessWidget {
                 appRouter.replaceAll([const RootRoute()]);
 
               } else if (state is AuthUnauthenticated) {
+                final currentRoute = appRouter.current.name;
+
+                // Auth screens
+                final authRoutes = [
+                  WelcomeRoute.name,
+                  SignInRoute.name,
+                  SignUpCredentialsRoute.name,
+                ];
+
                 // If session dies or user logs out, globally redirect to Welcome Screen
-                appRouter.replaceAll([const WelcomeRoute()]);
+                if (!authRoutes.contains(currentRoute)) {
+                  appRouter.replaceAll([const WelcomeRoute()]);
+                }
               }
             },
             // The actual screens of the app (managed by AutoRoute) are passed as 'child'

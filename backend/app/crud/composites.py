@@ -97,7 +97,7 @@ async def get_user_feed(
                 Wishlist.is_visible == True
             )
         )
-        .order_by(Gift.created_at.desc())
+        .order_by(Gift.id.desc())
         .limit(limit)
         .offset(offset)
     )

@@ -11,6 +11,7 @@ class FeedGiftCard extends StatelessWidget {
 
   final VoidCallback onDetailsTap;
   final VoidCallback onBookToggle;
+  final VoidCallback onUserTap;
 
   const FeedGiftCard({
     super.key,
@@ -19,6 +20,7 @@ class FeedGiftCard extends StatelessWidget {
     required this.isLoading,
     required this.onDetailsTap,
     required this.onBookToggle,
+    required this.onUserTap,
   });
 
   @override
@@ -36,22 +38,25 @@ class FeedGiftCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with username and avatar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-            child: Row(
-              children: [
-                UserAvatar(
-                  radius: 16,
-                  photoUrl: feedItem.owner.photoUrl,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '@${feedItem.owner.username}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+          InkWell(
+            onTap: onUserTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              child: Row(
+                children: [
+                  UserAvatar(
+                    radius: 16,
+                    photoUrl: feedItem.owner.photoUrl,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Text(
+                    '@${feedItem.owner.username}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 

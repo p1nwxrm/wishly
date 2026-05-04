@@ -16,7 +16,7 @@ class FeedBloc extends Bloc<FeedEvent, FeedState> {
   final Talker _talker;
 
   // Define how many items to fetch per page
-  static const int _limit = 3;
+  static const int _limit = 5;
 
   bool _isFetchingMore = false;
 

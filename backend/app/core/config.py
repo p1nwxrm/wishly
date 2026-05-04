@@ -11,7 +11,6 @@ from pydantic import Field # type: ignore
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 ENV_FILE_PATH = ROOT_DIR / ".env"
 
-
 # ==========================================
 # APPLICATION CONFIGURATION
 # ==========================================
