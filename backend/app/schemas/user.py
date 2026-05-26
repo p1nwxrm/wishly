@@ -13,7 +13,6 @@ class UserCreate(BaseModel):
     """
     username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-z0-9_]+$", description="Unique username")
     name: str = Field(..., min_length=1, max_length=100, description="User's full display name")
-    photo_url: Optional[str] = Field(default=None, max_length=255, description="Optional URL to the user's profile photo")
     email: EmailStr = Field(..., description="Valid email address")
     password: str = Field(..., min_length=8, description="Raw password, at least 8 characters")
 
@@ -31,8 +30,7 @@ class UserUpdate(BaseModel):
     Properties to receive via API on user update (PATCH request).
     """
     username: Optional[str] = Field(default=None, min_length=3, max_length=50, pattern=r"^[a-z0-9_]+$")
-    name: Optional[str] = Field(default=None, min_length=2, max_length=100)
-    photo_url: Optional[str] = Field(default=None, max_length=255)
+    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     password: Optional[str] = Field(default=None, min_length=8)
 
     # We don't allow updating email here.

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/utils/url_utils.dart';
+import '../../utils/url_utils.dart';
 import '../common/app_cached_network_image.dart';
 
 // A reusable widget to display a user's photo across the app.

@@ -57,17 +57,12 @@ async def upload_my_photo(
     """
     Uploads a new user photo and updates the user using the existing generic update_user CRUD.
     """
-    # 1. Save the file locally or to cloud storage and retrieve the URL
     photo_url = save_upload_file(file, subfolder="profiles")
 
-    # 2. Manually construct the Pydantic update schema
-    user_update_data = schemas.user.UserUpdate(photo_url=photo_url)
-
-    # 3. Pass it to the existing update function
-    updated_user = await crud.user.update_user(
-        db=db,
-        db_user=current_user,
-        user_in=user_update_data
+    updated_user = await crud.user.update_user_photo(
+	    db=db,
+	    db_user=current_user,
+	    photo_url=photo_url,
     )
 
     return updated_user

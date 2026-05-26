@@ -1,9 +1,10 @@
+name: wishly
 version: '3.8'
 
 services:
   db:
     image: mysql:8.0
-    container_name: wishlist_mysql
+    container_name: wishly_mysql
     restart: always
     environment:
       MYSQL_DATABASE: ${DB_NAME}
@@ -19,7 +20,7 @@ services:
 
   api:
     build: .
-    container_name: wishlist_fastapi
+    container_name: wishly_fastapi
     restart: always
     ports:
       - "8000:8000"

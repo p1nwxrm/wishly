@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../../core/utils/url_utils.dart';
+import '../../utils/url_utils.dart';
 
 // A highly reusable wrapper around CachedNetworkImage.
 // It handles URL formatting, loading states, and error fallbacks,

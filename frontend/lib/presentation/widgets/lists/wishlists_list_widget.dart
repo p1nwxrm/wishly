@@ -14,6 +14,7 @@ class WishlistsListWidget extends StatelessWidget {
   // Callbacks for individual card actions
   final ValueChanged<WishlistBaseModel> onWishlistTap;
   final ValueChanged<WishlistBaseModel>? onToggleVisibility;
+  final ValueChanged<WishlistBaseModel>? onEdit;
   final ValueChanged<WishlistBaseModel>? onDelete;
 
   const WishlistsListWidget({
@@ -23,6 +24,7 @@ class WishlistsListWidget extends StatelessWidget {
     required this.onRefresh,
     required this.onWishlistTap,
     this.onToggleVisibility,
+    this.onEdit,
     this.onDelete,
   });
 
@@ -92,10 +94,12 @@ class WishlistsListWidget extends StatelessWidget {
           return WishlistCard(
             wishlist: sharedWishlist,
             currentUserId: currentUserId,
-            // Pass the callbacks up to the parent screen using the base model
             onTap: () => onWishlistTap(wishlistBase),
             onToggleVisibility: onToggleVisibility != null
                 ? () => onToggleVisibility!(wishlistBase)
+                : null,
+            onEdit: onEdit != null
+                ? () => onEdit!(wishlistBase)
                 : null,
             onDelete: onDelete != null
                 ? () => onDelete!(wishlistBase)

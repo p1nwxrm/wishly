@@ -1,7 +1,10 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 
-// Reusable photo picker widget handling both local files and network images
+import 'user_avatar.dart';
+
+// Reusable photo picker widget handling both local files and existing user avatars
 class AvatarPicker extends StatelessWidget {
   // The newly picked local image file
   final File? localImage;
@@ -36,11 +39,15 @@ class AvatarPicker extends StatelessWidget {
       child: Stack(
         alignment: Alignment.bottomRight,
         children: [
-          CircleAvatar(
+          localImage != null
+              ? CircleAvatar(
             radius: radius,
             backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
-            backgroundImage: _getBackgroundImage(),
-            child: _buildFallbackIcon(colorScheme),
+            backgroundImage: FileImage(localImage!),
+          )
+              : UserAvatar(
+            radius: radius,
+            photoUrl: imageUrl,
           ),
 
           // Small camera icon badge
@@ -60,29 +67,5 @@ class AvatarPicker extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  // Helper method to determine the correct background image source
-  ImageProvider? _getBackgroundImage() {
-    if (localImage != null) {
-      // Prioritize the newly picked local image
-      return FileImage(localImage!);
-    } else if (imageUrl != null && imageUrl!.isNotEmpty) {
-      // Fallback to the existing network image
-      return NetworkImage(imageUrl!);
-    }
-    return null;
-  }
-
-  // Helper method to build the fallback icon if no image is provided
-  Widget? _buildFallbackIcon(ColorScheme colorScheme) {
-    if (localImage == null && (imageUrl == null || imageUrl!.isEmpty)) {
-      return Icon(
-        Icons.person_outline,
-        size: radius,
-        color: colorScheme.primary,
-      );
-    }
-    return null;
   }
 }

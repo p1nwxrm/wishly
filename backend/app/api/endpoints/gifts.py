@@ -57,9 +57,12 @@ async def upload_gift_photo(
     gift = await gift_service.verify_gift_ownership(db, gift_id, current_user.id)
 
     photo_url = save_upload_file(file, subfolder="gifts")
-    gift_update_data = GiftUpdate(photo_url=photo_url)
 
-    updated_gift = await crud.gift.update_gift(db=db, db_gift=gift, gift_in=gift_update_data)
+    updated_gift = await crud.gift.update_gift_photo(
+	    db=db,
+	    db_gift=gift,
+	    photo_url=photo_url
+    )
 
     # Load relationships for Pydantic validation
     full_gift = await crud.gift.get_gift(db, updated_gift.id)
@@ -110,6 +113,9 @@ async def update_existing_gift(
     full_gift.owner = current_user
 
     return full_gift
+
+
+
 
 
 @router.delete("/{gift_id}")

@@ -49,12 +49,14 @@ class GiftBloc extends Bloc<GiftEvent, GiftState> {
       ) async {
     emit(GiftLoading());
     try {
-      // 1. Create the gift first
-      final newGift = await _giftRepository.createGift(event.createModel);
+      var createdGift = await _giftRepository.createGift(event.createModel);
 
-      // 2. If the user attached a photo, upload it using the newly created gift's ID
+      // Upload the gift photo after the gift entity is created
       if (event.photoFile != null) {
-        await _giftRepository.uploadGiftPhoto(newGift.id, event.photoFile!);
+        createdGift = await _giftRepository.uploadGiftPhoto(
+          createdGift.id,
+          event.photoFile!,
+        );
       }
 
       emit(const GiftActionSuccess(message: 'Gift successfully created!'));
@@ -74,8 +76,19 @@ class GiftBloc extends Bloc<GiftEvent, GiftState> {
       ) async {
     emit(GiftLoading());
     try {
-      final updatedGift = await _giftRepository.updateGift(event.giftId, event.updateModel);
-      // Emit the updated gift so the UI instantly reflects the changes
+      var updatedGift = await _giftRepository.updateGift(
+        event.giftId,
+        event.updateModel,
+      );
+
+      // Upload the new gift photo after updating text fields
+      if (event.photoFile != null) {
+        updatedGift = await _giftRepository.uploadGiftPhoto(
+          event.giftId,
+          event.photoFile!,
+        );
+      }
+
       emit(GiftLoaded(sharedGift: updatedGift));
     } on DioException catch (e, st) {
       _talker.handle(e, st);

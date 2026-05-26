@@ -195,6 +195,17 @@ async def update_user(db: AsyncSession, db_user: User, user_in: UserUpdate) -> U
     return await get_user_by_id(db, db_user.id)  # type: ignore
 
 
+async def update_user_photo(
+    db: AsyncSession,
+    db_user: User,
+    photo_url: str,
+) -> User:
+    db_user.photo_url = photo_url
+    await db.commit()
+    await db.refresh(db_user)
+    return db_user
+
+
 async def delete_user(db: AsyncSession, user_id: int) -> bool:
     """
     Deletes a user from the database.

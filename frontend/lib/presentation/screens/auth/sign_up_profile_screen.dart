@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/models/user_models.dart';
 import '../../blocs/auth/auth_bloc.dart';
-import '../../utils/app_snackbars.dart';
+import '../../widgets/common/app_snackbars.dart';
 import '../../utils/image_picker_helper.dart';
 import '../../widgets/photo/avatar_picker.dart';
 import '../../widgets/common/button_loading_indicator.dart';
@@ -70,7 +70,7 @@ class _SignUpProfileScreenState extends State<SignUpProfileScreen> {
       context.read<AuthBloc>().add(
         RegisterRequested(
           userModel: userModel,
-          photoFile: _selectedPhoto, // Pass the selected file if any
+          avatarFile: _selectedPhoto,
         ),
       );
     }

@@ -4,7 +4,7 @@ import 'package:talker_dio_logger/talker_dio_logger.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 import '../storage/secure_storage_service.dart';
-import '../utils/app_constants.dart';
+import '../config/config.dart';
 import './auth_interceptor.dart';
 
 // Base API client for communicating with the FastAPI backend

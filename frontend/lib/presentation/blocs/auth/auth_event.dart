@@ -27,15 +27,15 @@ class LoginRequested extends AuthEvent {
 // Event triggered when the user attempts to register a new account
 class RegisterRequested extends AuthEvent {
   final UserCreateModel userModel;
-  final File? photoFile;
+  final File? avatarFile;
 
   const RegisterRequested({
     required this.userModel,
-    this.photoFile,
+    this.avatarFile,
   });
 
   @override
-  List<Object?> get props => [userModel, photoFile];
+  List<Object?> get props => [userModel, avatarFile];
 }
 
 // Event triggered when the user logs out

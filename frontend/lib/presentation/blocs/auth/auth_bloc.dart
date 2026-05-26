@@ -113,8 +113,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
 
       // 3. If the user selected a photo, upload it now that we have tokens
-      if (event.photoFile != null) {
-        await _authRepository.uploadProfilePhoto(event.photoFile!);
+      if (event.avatarFile != null) {
+        await _authRepository.uploadProfilePhoto(event.avatarFile!);
       }
 
       // 4. Fetch the full user profile to ensure a seamless UI transition

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'auth_guard.dart';
+
+import '../../data/models/user_models.dart';
 import '../../presentation/screens/screens.dart';
 
 part 'app_router.gr.dart';
@@ -34,6 +36,10 @@ class AppRouter extends RootStackRouter {
     ),
 
     // --- Other Screens ---
+    AutoRoute(
+      guards: [authGuard],
+      page: EditProfileRoute.page,
+    ),
     AutoRoute(
         guards: [authGuard],
         page: PublicProfileRoute.page

@@ -8,7 +8,7 @@ import '../../../core/di/injection.dart';
 import '../../../core/router/app_router.dart';
 import '../../../data/models/gift_models.dart';
 import '../../blocs/blocs.dart';
-import '../../utils/app_snackbars.dart';
+import '../../widgets/common/app_snackbars.dart';
 import '../../widgets/cards/feed_gift_card.dart';
 import '../../widgets/bottom_sheets/detailed_gift_bottom_sheet.dart';
 

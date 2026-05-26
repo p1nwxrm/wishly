@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import '../models/user_models.dart';
 
@@ -27,6 +28,29 @@ class UserRepository {
         data: updateModel.toJson(),
       );
       return PrivateUserModel.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Upload the currently authenticated user's photo
+  Future<PrivateUserModel> uploadProfilePhoto(File file) async {
+    try {
+      final fileName = file.path.split('/').last;
+
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          file.path,
+          filename: fileName,
+        ),
+      });
+
+      final response = await _dio.post(
+        '/users/me/photo',
+        data: formData,
+      );
+
+      return PrivateUserModel.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       rethrow;
     }

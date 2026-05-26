@@ -24,9 +24,13 @@ class RefreshCurrentUser extends UserEvent {}
 // Event to update the current user's profile
 class UpdateCurrentUser extends UserEvent {
   final UserUpdateModel updateModel;
+  final File? avatarFile;
 
-  const UpdateCurrentUser({required this.updateModel});
+  const UpdateCurrentUser({
+    required this.updateModel,
+    this.avatarFile,
+  });
 
   @override
-  List<Object?> get props => [updateModel];
+  List<Object?> get props => [updateModel, avatarFile];
 }

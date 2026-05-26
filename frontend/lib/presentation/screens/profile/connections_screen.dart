@@ -6,7 +6,7 @@ import '../../../core/di/injection.dart';
 import '../../../core/router/app_router.dart';
 import '../../../data/models/user_models.dart';
 import '../../blocs/blocs.dart';
-import '../../utils/app_snackbars.dart';
+import '../../widgets/common/app_snackbars.dart';
 import '../../widgets/lists/user_list_view.dart';
 
 @RoutePage()

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
@@ -56,7 +57,13 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     emit(UserLoading());
 
     try {
-      final updatedUser = await _userRepository.updateCurrentUser(event.updateModel);
+      var updatedUser = await _userRepository.updateCurrentUser(event.updateModel);
+
+      // Upload the new avatar after updating text profile data
+      if (event.avatarFile != null) {
+        updatedUser = await _userRepository.uploadProfilePhoto(event.avatarFile!);
+      }
+
       emit(const UserActionSuccess(message: 'Profile successfully updated!'));
       emit(UserLoaded(user: updatedUser));
     } on DioException catch (e, st) {

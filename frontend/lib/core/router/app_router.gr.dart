@@ -77,6 +77,53 @@ class ConnectionsRouteArgs {
 }
 
 /// generated route for
+/// [EditProfileScreen]
+class EditProfileRoute extends PageRouteInfo<EditProfileRouteArgs> {
+  EditProfileRoute({
+    Key? key,
+    required UserBaseModel user,
+    List<PageRouteInfo>? children,
+  }) : super(
+         EditProfileRoute.name,
+         args: EditProfileRouteArgs(key: key, user: user),
+         initialChildren: children,
+       );
+
+  static const String name = 'EditProfileRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<EditProfileRouteArgs>();
+      return EditProfileScreen(key: args.key, user: args.user);
+    },
+  );
+}
+
+class EditProfileRouteArgs {
+  const EditProfileRouteArgs({this.key, required this.user});
+
+  final Key? key;
+
+  final UserBaseModel user;
+
+  @override
+  String toString() {
+    return 'EditProfileRouteArgs{key: $key, user: $user}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! EditProfileRouteArgs) return false;
+    return key == other.key && user == other.user;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ user.hashCode;
+}
+
+/// generated route for
 /// [FeedScreen]
 class FeedRoute extends PageRouteInfo<void> {
   const FeedRoute({List<PageRouteInfo>? children})

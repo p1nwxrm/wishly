@@ -6,6 +6,7 @@ class WishlistCard extends StatelessWidget {
   final int currentUserId;
 
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
   final VoidCallback? onToggleVisibility;
   final VoidCallback? onDelete;
 
@@ -14,6 +15,7 @@ class WishlistCard extends StatelessWidget {
     required this.wishlist,
     required this.currentUserId,
     required this.onTap,
+    this.onEdit,
     this.onToggleVisibility,
     this.onDelete,
   });
@@ -70,6 +72,7 @@ class WishlistCard extends StatelessWidget {
               ),
 
               // Action buttons block: Visible only to the owner
+              // Action buttons block: visible only to the owner
               if (isOwner)
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -77,23 +80,43 @@ class WishlistCard extends StatelessWidget {
                     // Toggle visibility button
                     IconButton(
                       icon: Icon(
-                        wishlist.isVisible ? Icons.visibility : Icons.visibility_off,
-                        color: wishlist.isVisible ? theme.colorScheme.primary : theme.colorScheme.error,
+                        wishlist.isVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: wishlist.isVisible
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.error,
                       ),
                       onPressed: onToggleVisibility,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
                     const SizedBox(width: 8),
+
+                    // Edit wishlist button
+                    IconButton(
+                      icon: Icon(
+                        Icons.edit_outlined,
+                        color: theme.colorScheme.primary,
+                      ),
+                      onPressed: onEdit,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 8),
+
                     // Delete wishlist button
                     IconButton(
-                      icon: Icon(Icons.delete_outline, color: theme.colorScheme.error),
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: theme.colorScheme.error,
+                      ),
                       onPressed: onDelete,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
                   ],
-                )
+                ),
             ],
           ),
         ),

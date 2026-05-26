@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../blocs/auth/auth_bloc.dart';
-import '../../utils/app_snackbars.dart';
+import '../../widgets/common/app_snackbars.dart';
 import '../../widgets/common/common.dart';
 
 @RoutePage()

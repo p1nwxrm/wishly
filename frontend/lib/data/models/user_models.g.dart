@@ -136,7 +136,6 @@ UserCreateModel _$UserCreateModelFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String,
       email: json['email'] as String,
       password: json['password'] as String,
-      photoUrl: json['photo_url'] as String?,
     );
 
 Map<String, dynamic> _$UserCreateModelToJson(UserCreateModel instance) =>
@@ -145,14 +144,12 @@ Map<String, dynamic> _$UserCreateModelToJson(UserCreateModel instance) =>
       'name': instance.name,
       'email': instance.email,
       'password': instance.password,
-      'photo_url': instance.photoUrl,
     };
 
 UserUpdateModel _$UserUpdateModelFromJson(Map<String, dynamic> json) =>
     UserUpdateModel(
       username: json['username'] as String?,
       name: json['name'] as String?,
-      photoUrl: json['photo_url'] as String?,
       password: json['password'] as String?,
     );
 
@@ -160,6 +157,5 @@ Map<String, dynamic> _$UserUpdateModelToJson(UserUpdateModel instance) =>
     <String, dynamic>{
       'username': ?instance.username,
       'name': ?instance.name,
-      'photo_url': ?instance.photoUrl,
       'password': ?instance.password,
     };

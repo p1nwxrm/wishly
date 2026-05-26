@@ -33,11 +33,16 @@ class CreateGift extends GiftEvent {
 class UpdateGift extends GiftEvent {
   final int giftId;
   final GiftUpdateModel updateModel;
+  final File? photoFile;
 
-  const UpdateGift({required this.giftId, required this.updateModel});
+  const UpdateGift({
+    required this.giftId,
+    required this.updateModel,
+    this.photoFile,
+  });
 
   @override
-  List<Object?> get props => [giftId, updateModel];
+  List<Object?> get props => [giftId, updateModel, photoFile];
 }
 
 // Event to update ONLY the gift photo later on

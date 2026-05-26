@@ -10,7 +10,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/models/gift_models.dart';
 import '../../../data/models/wishlist_models.dart';
 import '../../blocs/blocs.dart';
-import '../../utils/app_snackbars.dart';
+import '../../widgets/common/app_snackbars.dart';
 import '../../widgets/profile/profile.dart';
 import '../../widgets/lists/lists.dart';
 import '../../widgets/bottom_sheets/bottom_sheets.dart';
@@ -72,6 +72,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
     final userState = context.read<UserBloc>().state;
     if (userState is UserLoaded) {
       final username = userState.user.username;
+      context.read<UserBloc>().add(RefreshCurrentUser());
       context.read<MyProfileBloc>().add(RefreshMyProfile(username: username));
       context.read<WishlistBloc>().add(RefreshUserWishlists(username: username));
       context.read<BookingBloc>().add(RefreshMyBookings());
@@ -120,7 +121,7 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                   // Pass the current WishlistBloc into the bottom sheet so it can dispatch events
                   builder: (_) => BlocProvider.value(
                     value: ctx.read<WishlistBloc>(),
-                    child: const AddWishlistBottomSheet(),
+                    child: const WishlistActionBottomSheet(),
                   ),
                 );
               },
@@ -193,8 +194,24 @@ class _MyProfileScreenState extends State<MyProfileScreen>
                           children: [
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () {
-                                  // TODO: Logic for transition to EditProfileScreen
+                                onPressed: () async {
+                                  final latestUserState = context.read<UserBloc>().state;
+
+                                  if (latestUserState is! UserLoaded) {
+                                    AppSnackbars.showError(context, 'User data is not loaded yet.');
+                                    return;
+                                  }
+
+                                  final result = await context.router.push<bool>(
+                                    EditProfileRoute(user: latestUserState.user),
+                                  );
+
+                                  if (!context.mounted) return;
+
+                                  if (result == true) {
+                                    AppSnackbars.showSuccess(context, 'Profile successfully updated!');
+                                    _refreshData();
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.secondarySurfaceColor,
@@ -340,6 +357,20 @@ class _WishlistsTab extends StatelessWidget {
     }
   }
 
+  // Opens the universal sheet in Edit mode
+  void _showEditBottomSheet(BuildContext context, WishlistBaseModel wishlist) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) {
+        return BlocProvider.value(
+          value: context.read<WishlistBloc>(),
+          child: WishlistActionBottomSheet(wishlist: wishlist),
+        );
+      },
+    );
+  }
+
   void _toggleVisibility(BuildContext context, WishlistBaseModel wishlist) {
     final updatedModel = WishlistUpdateModel(isVisible: !wishlist.isVisible);
     context.read<WishlistBloc>().add(
@@ -406,6 +437,7 @@ class _WishlistsTab extends StatelessWidget {
             onWishlistTap: (wishlist) => _navigateToDetails(context, wishlist),
             onToggleVisibility: (wishlist) => _toggleVisibility(context, wishlist),
             onDelete: (wishlist) => _showDeleteConfirmationDialog(context, wishlist),
+            onEdit: (wishlist) => _showEditBottomSheet(context, wishlist),
           );
         }
 

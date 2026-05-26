@@ -110,9 +110,6 @@ class GiftCreateModel extends Equatable {
   @JsonKey(name: 'price_usd')
   final double priceUsd;
 
-  @JsonKey(name: 'photo_url')
-  final String? photoUrl;
-
   @JsonKey(name: 'link_url')
   final String? linkUrl;
 
@@ -128,7 +125,6 @@ class GiftCreateModel extends Equatable {
   const GiftCreateModel({
     required this.name,
     required this.priceUsd,
-    this.photoUrl,
     this.linkUrl,
     this.isVisible = true,
     this.description,
@@ -142,7 +138,6 @@ class GiftCreateModel extends Equatable {
   List<Object?> get props => [
     name,
     priceUsd,
-    photoUrl,
     linkUrl,
     isVisible,
     description,
@@ -159,9 +154,6 @@ class GiftUpdateModel extends Equatable {
   @JsonKey(name: 'price_usd')
   final double? priceUsd;
 
-  @JsonKey(name: 'photo_url')
-  final String? photoUrl;
-
   @JsonKey(name: 'link_url')
   final String? linkUrl;
 
@@ -174,7 +166,6 @@ class GiftUpdateModel extends Equatable {
   const GiftUpdateModel({
     this.name,
     this.priceUsd,
-    this.photoUrl,
     this.linkUrl,
     this.isVisible,
     this.description,
@@ -187,7 +178,6 @@ class GiftUpdateModel extends Equatable {
   List<Object?> get props => [
     name,
     priceUsd,
-    photoUrl,
     linkUrl,
     isVisible,
     description,

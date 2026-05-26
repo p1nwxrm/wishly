@@ -14,7 +14,6 @@ class GiftCreate(BaseModel):
     """
     name: str = Field(..., min_length=1, max_length=150)
     price_usd: float = Field(..., gt=0, description="Price must be strictly greater than 0")
-    photo_url: Optional[str] = Field(default=None, max_length=255)
     link_url: Optional[HttpUrl] = Field(default=None, description="Valid URL to the gift")
     is_visible: bool = True
     description: Optional[str] = None
@@ -28,7 +27,6 @@ class GiftUpdate(BaseModel):
     """
     name: Optional[str] = Field(default=None, min_length=1, max_length=150)
     price_usd: Optional[float] = Field(default=None, gt=0, description="Price must be strictly greater than 0")
-    photo_url: Optional[str] = Field(default=None, max_length=255)
     link_url: Optional[HttpUrl] = None
     is_visible: Optional[bool] = None
     description: Optional[str] = None

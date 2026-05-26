@@ -181,22 +181,18 @@ class UserCreateModel extends Equatable {
   @JsonKey(name: 'password')
   final String password;
 
-  @JsonKey(name: 'photo_url')
-  final String? photoUrl;
-
   const UserCreateModel({
     required this.username,
     required this.name,
     required this.email,
     required this.password,
-    this.photoUrl,
   });
 
   factory UserCreateModel.fromJson(Map<String, dynamic> json) => _$UserCreateModelFromJson(json);
   Map<String, dynamic> toJson() => _$UserCreateModelToJson(this);
 
   @override
-  List<Object?> get props => [username, name, email, password, photoUrl];
+  List<Object?> get props => [username, name, email, password];
 }
 
 // Matches UserUpdate in FastAPI (PATCH request)
@@ -208,16 +204,12 @@ class UserUpdateModel extends Equatable {
   @JsonKey(name: 'name')
   final String? name;
 
-  @JsonKey(name: 'photo_url')
-  final String? photoUrl;
-
   @JsonKey(name: 'password')
   final String? password;
 
   const UserUpdateModel({
     this.username,
     this.name,
-    this.photoUrl,
     this.password,
   });
 
@@ -225,5 +217,5 @@ class UserUpdateModel extends Equatable {
   Map<String, dynamic> toJson() => _$UserUpdateModelToJson(this);
 
   @override
-  List<Object?> get props => [username, name, photoUrl, password];
+  List<Object?> get props => [username, name, password];
 }

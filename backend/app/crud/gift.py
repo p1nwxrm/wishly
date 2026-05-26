@@ -91,6 +91,13 @@ async def update_gift(db: AsyncSession, db_gift: Gift, gift_in: GiftUpdate) -> G
     return db_gift
 
 
+async def update_gift_photo(db: AsyncSession, db_gift: Gift, photo_url: str) -> Gift:
+    db_gift.photo_url = photo_url
+    await db.commit()
+    await db.refresh(db_gift)
+    return db_gift
+
+
 async def delete_gift(db: AsyncSession, gift_id: int) -> bool:
     """
         Deletes a gift from the database.

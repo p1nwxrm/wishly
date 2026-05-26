@@ -1,4 +1,4 @@
 //GENERATED BARREL FILE 
-export 'add_wishlist_bottom_sheet.dart'; 
+export 'wishlist_action_bottom_sheet.dart';
 export 'detailed_gift_bottom_sheet.dart';
 export 'add_gift_bottom_sheet.dart';

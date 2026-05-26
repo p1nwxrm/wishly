@@ -1,6 +1,7 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict # type: ignore
 from pydantic import Field # type: ignore
+from urllib.parse import quote_plus
 
 # ==========================================
 # PATH RESOLUTION
@@ -46,7 +47,14 @@ class Settings(BaseSettings):
 		"""
 		Dynamically constructs the asynchronous MySQL connection string.
 		"""
-		return f"mysql+aiomysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+		user = quote_plus(self.DB_USER)
+		password = quote_plus(self.DB_PASSWORD)
+
+		return (
+			f"mysql+aiomysql://{user}:{password}"
+			f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+			f"?charset=utf8mb4"
+		)
 
 	# We now pass the exact, absolute path to the .env file
 	model_config = SettingsConfigDict(env_file=str(ENV_FILE_PATH), env_file_encoding="utf-8", extra="ignore")

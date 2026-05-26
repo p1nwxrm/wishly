@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 import '../../core/di/injection.dart';
-import 'app_snackbars.dart';
+import '../widgets/common/app_snackbars.dart';
 
 class ImagePickerHelper {
   static final ImagePicker _picker = ImagePicker();
